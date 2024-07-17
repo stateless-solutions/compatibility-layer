@@ -11,6 +11,15 @@ import (
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/rpc"
+	"golang.org/x/crypto/ssh"
+)
+
+var (
+	chainURL        = MustGetString("CHAIN_URL")
+	keyFile         = MustGetString("KEY_FILE")
+	keyFilePassword = GetString("KEY_FILE_PASSWORD", "")
+	identity        = MustGetString("IDENTITY")
+	httpPort        = GetString("HTTP_PORT", "8080")
 )
 
 type RPCReq struct {
@@ -39,8 +48,7 @@ type RPCResJSON struct {
 }
 
 type RPCContext struct {
-	IsSliceReq      bool
-	IsSliceRes      bool
+	IsSlice         bool
 	IsGzip          bool
 	HTTPResponse    *http.Response
 	RPCReqs         []*RPCReq
@@ -49,13 +57,32 @@ type RPCContext struct {
 	BlockMap        map[string][]*rpc.BlockNumberOrHash
 	ChangedMethods  map[string]string
 	IDsHolder       map[string]string
+	SigningKey      ssh.Signer
 }
 
 func main() {
-	// Start the server on port 8080
-	http.HandleFunc("/", handler)
-	log.Println("Starting server on :8080...")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	var signer ssh.Signer
+	var err error
+	if keyFilePassword != "" {
+		signer, err = GetSigningKeyFromKeyFileWithPassphrase(keyFile, keyFilePassword)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		signer, err = GetSigningKeyFromKeyFile(keyFile)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	context := &RPCContext{
+		SigningKey: signer,
+	}
+
+	// Start the server on the specified port
+	http.HandleFunc("/", context.handler)
+	log.Printf("Starting server on :%s...\n", httpPort)
+	log.Fatal(http.ListenAndServe(":"+httpPort, nil))
 }
 
 func (c *RPCContext) parseRPCReq(w http.ResponseWriter, r *http.Request) error {
@@ -78,9 +105,10 @@ func (c *RPCContext) parseRPCReq(w http.ResponseWriter, r *http.Request) error {
 			http.Error(w, "Invalid request format", http.StatusBadRequest)
 			return errors.New("Invalid request format")
 		}
-		c.IsSliceReq = true
+		c.IsSlice = true
 		c.RPCReqs = rpcReqs
 	} else {
+		c.IsSlice = false
 		c.RPCReqs = []*RPCReq{rpcReq}
 	}
 
@@ -109,18 +137,14 @@ func (c *RPCContext) doRPCCall(w http.ResponseWriter, r *http.Request) error {
 	// Marshal the modified request body
 	var modifiedBody []byte
 	var err error
-	if c.IsSliceReq {
-		modifiedBody, err = json.Marshal(c.RPCReqs)
-	} else {
-		modifiedBody, err = json.Marshal(c.RPCReqs[0])
-	}
+	modifiedBody, err = json.Marshal(c.RPCReqs)
 	if err != nil {
 		http.Error(w, "Failed to marshal modified request", http.StatusInternalServerError)
 		return errors.New("Failed to marshal modified request")
 	}
 
 	// Create a new request to forward to the second server
-	req, err := http.NewRequest("POST", "http://localhost:8551", bytes.NewBuffer(modifiedBody))
+	req, err := http.NewRequest("POST", chainURL, bytes.NewBuffer(modifiedBody))
 	if err != nil {
 		http.Error(w, "Failed to create request", http.StatusInternalServerError)
 		return errors.New("Failed to create request")
@@ -204,7 +228,6 @@ func (c *RPCContext) doRPCCall(w http.ResponseWriter, r *http.Request) error {
 			http.Error(w, "Invalid response format", http.StatusBadRequest)
 			return errors.New("Invalid response format")
 		}
-		c.IsSliceRes = true
 		c.RPCRess = rpcRess
 	} else {
 		c.RPCRess = []*RPCResJSON{rpcRes}
@@ -221,12 +244,7 @@ func (c *RPCContext) modifyRes(w http.ResponseWriter) error {
 		return err
 	}
 
-	signer, err := GetSigningKeyFromKeyFile(".mock_key.pem")
-	if err != nil {
-		panic(err)
-	}
-
-	c.RPCRessAttested, err = AttestRess(c.RPCRess, "mock_identity", signer)
+	c.RPCRessAttested, err = AttestRess(c.RPCRess, identity, c.SigningKey)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
@@ -239,7 +257,7 @@ func (c *RPCContext) returnRes(w http.ResponseWriter) error {
 	// Marshal the modified response body
 	var modifiedRespBody []byte
 	var err error
-	if c.IsSliceRes {
+	if c.IsSlice {
 		modifiedRespBody, err = json.Marshal(c.RPCRessAttested)
 	} else {
 		modifiedRespBody, err = json.Marshal(c.RPCRessAttested[0])
@@ -278,30 +296,28 @@ func (c *RPCContext) returnRes(w http.ResponseWriter) error {
 	return nil
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	context := &RPCContext{}
-
-	err := context.parseRPCReq(w, r)
+func (c *RPCContext) handler(w http.ResponseWriter, r *http.Request) {
+	err := c.parseRPCReq(w, r)
 	if err != nil {
 		return
 	}
 
-	err = context.modifyReq(w)
+	err = c.modifyReq(w)
 	if err != nil {
 		return
 	}
 
-	err = context.doRPCCall(w, r)
+	err = c.doRPCCall(w, r)
 	if err != nil {
 		return
 	}
 
-	err = context.modifyRes(w)
+	err = c.modifyRes(w)
 	if err != nil {
 		return
 	}
 
-	err = context.returnRes(w)
+	err = c.returnRes(w)
 	if err != nil {
 		return
 	}
