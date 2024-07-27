@@ -57,6 +57,9 @@ type RPCContext struct {
 	BlockMap        map[string][]*rpc.BlockNumberOrHash
 	ChangedMethods  map[string]string
 	IDsHolder       map[string]string
+	Identity        string
+	ChainURL        string
+	HTTPPort        string
 	SigningKey      ssh.Signer
 }
 
@@ -77,12 +80,15 @@ func main() {
 
 	context := &RPCContext{
 		SigningKey: signer,
+		Identity:   identity,
+		ChainURL:   chainURL,
+		HTTPPort:   httpPort,
 	}
 
 	// Start the server on the specified port
 	http.HandleFunc("/", context.handler)
-	log.Printf("Starting server on :%s...\n", httpPort)
-	log.Fatal(http.ListenAndServe(":"+httpPort, nil))
+	log.Printf("Starting server on :%s...\n", context.HTTPPort)
+	log.Fatal(http.ListenAndServe(":"+context.HTTPPort, nil))
 }
 
 func (c *RPCContext) parseRPCReq(w http.ResponseWriter, r *http.Request) error {
@@ -144,7 +150,7 @@ func (c *RPCContext) doRPCCall(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Create a new request to forward to the second server
-	req, err := http.NewRequest("POST", chainURL, bytes.NewBuffer(modifiedBody))
+	req, err := http.NewRequest("POST", c.ChainURL, bytes.NewBuffer(modifiedBody))
 	if err != nil {
 		http.Error(w, "Failed to create request", http.StatusInternalServerError)
 		return errors.New("Failed to create request")
@@ -244,7 +250,7 @@ func (c *RPCContext) modifyRes(w http.ResponseWriter) error {
 		return err
 	}
 
-	c.RPCRessAttested, err = AttestRess(c.RPCRess, identity, c.SigningKey)
+	c.RPCRessAttested, err = AttestRess(c.RPCRess, c.Identity, c.SigningKey)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
