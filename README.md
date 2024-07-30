@@ -1,15 +1,15 @@
-## Stateless Compatibility Layer
+# Stateless Compatibility Layer
 
 This repository contains a Dockerized Go application for the Stateless Compatibility Layer. This document provides instructions on how to set up and run the application using Docker.
 
-### Prerequisites
+## Prerequisites
 
 Before you begin, ensure you have the following installed on your system:
 
 - Docker
 - Go (for development purposes)
 
-### Setup
+## Setup
 
 1. **Clone the repository:**
 
@@ -38,19 +38,19 @@ Before you begin, ensure you have the following installed on your system:
 
     Ensure that the `KEY_FILE` path points to the actual location of your key file.
 
-### Building the Docker Image
+## Building the Docker Image
 
 1. **Build the Docker image:**
 
     Navigate to the root directory of the project and run the following command:
 
     ```sh
-    sudo docker build -t comp-layer .
+    docker build -t comp-layer .
     ```
 
     This command builds the Docker image and tags it as `comp-layer`.
 
-### Running the Application
+## Running the Application
 
 1. **Ensure your key file is in place:**
 
@@ -61,7 +61,7 @@ Before you begin, ensure you have the following installed on your system:
     Use the following command to run the Docker container. This command reads environment variables from the `.env` file, mounts the key file, and starts the application:
 
     ```sh
-    sudo docker run --env-file=.env -v /path/to/your/.key.pem:/app/.key.pem -d -p 8080:8080 --name comp-layer comp-layer --p=true
+    docker run --env-file=.env -v /path/to/your/.key.pem:/app/.key.pem -d -p 8080:8080 --name comp-layer comp-layer --p=true
     ```
 
     - `--env-file=.env`: Loads the environment variables from the `.env` file.
@@ -69,38 +69,38 @@ Before you begin, ensure you have the following installed on your system:
     - `-d`: Runs the container in detached mode.
     - `-p 8080:8080`: Maps port 8080 on your host to port 8080 in the container. The exposed port depends on the `HTTP_PORT` environment variable.
 
-### Accessing the Application
+## Accessing the Application
 
 Once the container is up and running, the application will be accessible at `http://localhost:8080` (or the port specified in `HTTP_PORT`).
 
-### Stopping the Application
+## Stopping the Application
 
 To stop the running Docker container, use the following command:
 
 ```sh
-sudo docker stop comp-layer
+docker stop comp-layer
 ```
 
-### Removing the Container
+## Removing the Container
 
 To remove the stopped Docker container, use the following command:
 
 ```sh
-sudo docker rm comp-layer
+docker rm comp-layer
 ```
 
-### Notes
+## Notes
 
 - Ensure the `CHAIN_URL`, `KEY_FILE`, `KEY_FILE_PASSWORD`, `IDENTITY`, and `HTTP_PORT` environment variables are correctly set in your `.env` file.
 - The port specified in the `HTTP_PORT` environment variable should match the port mapping in the Docker run command.
 
-### Troubleshooting
+## Troubleshooting
 
 - **Port Conflicts**: If the specified port is already in use, you can change the `HTTP_PORT` variable in the `.env` file and update the port mapping in the Docker run command accordingly.
 - **Key File**: Ensure the key file path is correct and the file has the necessary permissions.
 
 For further assistance, please contact the repository maintainer.
 
-### Getting Help and Customization
+## Getting Help and Customization
 
 This README should help you get started with running the Stateless Compatibility Layer using Docker. The Docker setup is designed to be flexible so you can deploy it however you want. Feel free to create your own Docker Compose file, Makefile, or other deployment configurations. If you encounter any issues or have questions, feel free to open an issue in the repository.
