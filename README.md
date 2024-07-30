@@ -29,7 +29,7 @@ Before you begin, ensure you have the following installed on your system:
     Edit the `.env` file to set the necessary environment variables. The required variables are:
 
     ```ini
-    CHAIN_URL=http://localhost:8551
+    CHAIN_URL=http://your-chain.co
     KEY_FILE=/path/to/your/.key.pem
     KEY_FILE_PASSWORD=
     IDENTITY=identity
