@@ -1,5 +1,3 @@
-# README
-
 ## Stateless Compatibility Layer
 
 This repository contains a Dockerized Go application for the Stateless Compatibility Layer. This document provides instructions on how to set up and run the application using Docker.
@@ -32,9 +30,9 @@ Before you begin, ensure you have the following installed on your system:
 
     ```ini
     CHAIN_URL=http://localhost:8551
-    KEY_FILE=/path/to/your/.mock_key.pem
+    KEY_FILE=/path/to/your/.key.pem
     KEY_FILE_PASSWORD=
-    IDENTITY=mock_identity
+    IDENTITY=identity
     HTTP_PORT=8080
     ```
 
@@ -63,11 +61,11 @@ Before you begin, ensure you have the following installed on your system:
     Use the following command to run the Docker container. This command reads environment variables from the `.env` file, mounts the key file, and starts the application:
 
     ```sh
-    sudo docker run --env-file=.env -v /path/to/your/.mock_key.pem:/app/.mock_key.pem -d -p 8080:8080 --name comp-layer comp-layer --p=true
+    sudo docker run --env-file=.env -v /path/to/your/.key.pem:/app/.key.pem -d -p 8080:8080 --name comp-layer comp-layer --p=true
     ```
 
     - `--env-file=.env`: Loads the environment variables from the `.env` file.
-    - `-v /path/to/your/.mock_key.pem:/app/.mock_key.pem`: Mounts the key file into the Docker container. Ensure this path matches the `KEY_FILE` variable in the `.env` file.
+    - `-v /path/to/your/.key.pem:/app/.key.pem`: Mounts the key file into the Docker container. Ensure this path matches the `KEY_FILE` variable in the `.env` file.
     - `-d`: Runs the container in detached mode.
     - `-p 8080:8080`: Maps port 8080 on your host to port 8080 in the container. The exposed port depends on the `HTTP_PORT` environment variable.
 
