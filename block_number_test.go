@@ -36,8 +36,8 @@ func TestBlockNumber(t *testing.T) {
 				Result: map[string]interface{}{"number": "0x21"}}},
 			expectedRes: &RPCResJSON{
 				ID: json.RawMessage("21"),
-				Result: callResultAndBlockNumber{
-					Result:      "aaa",
+				Result: blockNumberResult{
+					Data:        "aaa",
 					BlockNumber: "0x21",
 				},
 			},
@@ -62,8 +62,8 @@ func TestBlockNumber(t *testing.T) {
 			}},
 			expectedRes: &RPCResJSON{
 				ID: json.RawMessage("21"),
-				Result: balanceAndBlockNumber{
-					Balance:     "1",
+				Result: blockNumberResult{
+					Data:        "1",
 					BlockNumber: "0x23",
 				},
 			},
@@ -86,8 +86,8 @@ func TestBlockNumber(t *testing.T) {
 				Result: map[string]interface{}{"number": "0x21"}}},
 			expectedRes: &RPCResJSON{
 				ID: json.RawMessage("21"),
-				Result: storageAndBlockNumber{
-					Storage:     "aaa",
+				Result: blockNumberResult{
+					Data:        "aaa",
 					BlockNumber: "0x21",
 				},
 			},
@@ -113,9 +113,9 @@ func TestBlockNumber(t *testing.T) {
 				Result: map[string]interface{}{"number": "0x21"}}},
 			expectedRes: &RPCResJSON{
 				ID: json.RawMessage("21"),
-				Result: transactionCountAndBlockNumber{
-					TransactionCount: "1",
-					BlockNumber:      "0x21",
+				Result: blockNumberResult{
+					Data:        "1",
+					BlockNumber: "0x21",
 				},
 			},
 			contentsToRewrite: []string{"pending"},
@@ -140,8 +140,8 @@ func TestBlockNumber(t *testing.T) {
 				Result: map[string]interface{}{"number": "0x21"}}},
 			expectedRes: &RPCResJSON{
 				ID: json.RawMessage("21"),
-				Result: codeAndBlockNumber{
-					Code:        "1",
+				Result: blockNumberResult{
+					Data:        "1",
 					BlockNumber: "0x21",
 				},
 			},
@@ -167,8 +167,8 @@ func TestBlockNumber(t *testing.T) {
 				Result: map[string]interface{}{"number": "0x21"}}},
 			expectedRes: &RPCResJSON{
 				ID: json.RawMessage("21"),
-				Result: codeAndBlockNumber{
-					Code:        "1",
+				Result: blockNumberResult{
+					Data:        "1",
 					BlockNumber: "0x21",
 				},
 			},
@@ -194,8 +194,8 @@ func TestBlockNumber(t *testing.T) {
 				Result: map[string]interface{}{"number": "0x21"}}},
 			expectedRes: &RPCResJSON{
 				ID: json.RawMessage("21"),
-				Result: codeAndBlockNumber{
-					Code:        "1",
+				Result: blockNumberResult{
+					Data:        "1",
 					BlockNumber: "0x21",
 				},
 			},
@@ -242,8 +242,8 @@ func TestBlockNumber(t *testing.T) {
 				Result: "a"}},
 			expectedRes: &RPCResJSON{
 				ID: json.RawMessage("21"),
-				Result: callResultAndBlockNumber{
-					Result:      "aaa",
+				Result: blockNumberResult{
+					Data:        "aaa",
 					BlockNumber: "0x21",
 				},
 			},
@@ -270,8 +270,8 @@ func TestBlockNumber(t *testing.T) {
 				Result: map[string]interface{}{"block": "0x21"}}},
 			expectedRes: &RPCResJSON{
 				ID: json.RawMessage("21"),
-				Result: callResultAndBlockNumber{
-					Result:      "aaa",
+				Result: blockNumberResult{
+					Data:        "aaa",
 					BlockNumber: "0x21",
 				},
 			},
@@ -298,9 +298,9 @@ func TestBlockNumber(t *testing.T) {
 				Result: map[string]interface{}{"number": "0x21"}}},
 			expectedRes: &RPCResJSON{
 				ID: json.RawMessage("21"),
-				Result: blockTransactionCountAndBlockNumber{
-					TransactionCount: "aaa",
-					BlockNumber:      "0x21",
+				Result: blockNumberResult{
+					Data:        "aaa",
+					BlockNumber: "0x21",
 				},
 			},
 			contentsToRewrite: []string{"latest"},
@@ -325,9 +325,9 @@ func TestBlockNumber(t *testing.T) {
 				Result: map[string]interface{}{"number": "0x21"}}},
 			expectedRes: &RPCResJSON{
 				ID: json.RawMessage("21"),
-				Result: rawTransactionAndBlockNumber{
-					RawTransaction: "aaa",
-					BlockNumber:    "0x21",
+				Result: blockNumberResult{
+					Data:        "aaa",
+					BlockNumber: "0x21",
 				},
 			},
 			contentsToRewrite: []string{"latest"},
@@ -352,8 +352,8 @@ func TestBlockNumber(t *testing.T) {
 				Result: map[string]interface{}{"number": "0x21"}}},
 			expectedRes: &RPCResJSON{
 				ID: json.RawMessage("21"),
-				Result: uncleCountAndBlockNumber{
-					UncleCount:  "aaa",
+				Result: blockNumberResult{
+					Data:        "aaa",
 					BlockNumber: "0x21",
 				},
 			},
@@ -381,8 +381,8 @@ func TestBlockNumber(t *testing.T) {
 					Result: map[string]interface{}{"number": "0x22"}}},
 			expectedRes: &RPCResJSON{
 				ID: json.RawMessage("21"),
-				Result: logsAndBlockRange{
-					Logs:          "aaa",
+				Result: blockRangeResult{
+					Data:          "aaa",
 					StartingBlock: "0x21",
 					EndingBlock:   "0x22",
 				},
@@ -408,8 +408,8 @@ func TestBlockNumber(t *testing.T) {
 			}},
 			expectedRes: &RPCResJSON{
 				ID: json.RawMessage("21"),
-				Result: logsAndBlockRange{
-					Logs:          "aaa",
+				Result: blockRangeResult{
+					Data:          "aaa",
 					StartingBlock: "0x21",
 					EndingBlock:   "0x22",
 				},
@@ -434,8 +434,8 @@ func TestBlockNumber(t *testing.T) {
 				Result: map[string]interface{}{"number": "0x21"}}},
 			expectedRes: &RPCResJSON{
 				ID: json.RawMessage("21"),
-				Result: logsAndBlockRange{
-					Logs:          "aaa",
+				Result: blockRangeResult{
+					Data:          "aaa",
 					StartingBlock: "0x21",
 					EndingBlock:   "0x21",
 				},
@@ -464,8 +464,8 @@ func TestBlockNumber(t *testing.T) {
 					Result: map[string]interface{}{"number": "0x22"}}},
 			expectedRes: &RPCResJSON{
 				ID: json.RawMessage("21"),
-				Result: logsAndBlockRange{
-					Logs:          "aaa",
+				Result: blockRangeResult{
+					Data:          "aaa",
 					StartingBlock: "0x21",
 					EndingBlock:   "0x22",
 				},
@@ -492,8 +492,8 @@ func TestBlockNumber(t *testing.T) {
 				Result: map[string]interface{}{"number": "0x21"}}},
 			expectedRes: &RPCResJSON{
 				ID: json.RawMessage("21"),
-				Result: balanceValuesAndBlockNumber{
-					Values:      "aaa",
+				Result: blockNumberResult{
+					Data:        "aaa",
 					BlockNumber: "0x21",
 				},
 			},

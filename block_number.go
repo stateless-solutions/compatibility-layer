@@ -10,55 +10,15 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
-type callResultAndBlockNumber struct {
-	Result      interface{} `json:"result"`
+type blockNumberResult struct {
+	Data        interface{} `json:"data"`
 	BlockNumber string      `json:"blockNumber"`
 }
 
-type balanceAndBlockNumber struct {
-	Balance     interface{} `json:"balance"`
-	BlockNumber string      `json:"blockNumber"`
-}
-
-type storageAndBlockNumber struct {
-	Storage     interface{} `json:"storage"`
-	BlockNumber string      `json:"blockNumber"`
-}
-
-type transactionCountAndBlockNumber struct {
-	TransactionCount interface{} `json:"transactionCount"`
-	BlockNumber      string      `json:"blockNumber"`
-}
-
-type codeAndBlockNumber struct {
-	Code        interface{} `json:"code"`
-	BlockNumber string      `json:"blockNumber"`
-}
-
-type blockTransactionCountAndBlockNumber struct {
-	TransactionCount interface{} `json:"transactionCount"`
-	BlockNumber      string      `json:"blockNumber"`
-}
-
-type rawTransactionAndBlockNumber struct {
-	RawTransaction interface{} `json:"rawTransaction"`
-	BlockNumber    string      `json:"blockNumber"`
-}
-
-type uncleCountAndBlockNumber struct {
-	UncleCount  interface{} `json:"uncleCount"`
-	BlockNumber string      `json:"blockNumber"`
-}
-
-type logsAndBlockRange struct {
-	Logs          interface{} `json:"logs"`
+type blockRangeResult struct {
+	Data          interface{} `json:"data"`
 	StartingBlock string      `json:"startingBlock"`
 	EndingBlock   string      `json:"endingBlock"`
-}
-
-type balanceValuesAndBlockNumber struct {
-	Values      interface{} `json:"values"`
-	BlockNumber string      `json:"blockNumber"`
 }
 
 var (
@@ -470,61 +430,20 @@ func getBlockNumber(res *RPCResJSON, bnHolder map[string]string, bnMethodsBlockN
 func changeResultToBlockNumberStruct(res *RPCResJSON, bnHolder map[string]string, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash, originalMethod string) error {
 	blockNumber := getBlockNumber(res, bnHolder, bnMethodsBlockNumber)
 
-	switch originalMethod {
-	case "eth_callAndBlockNumber":
-		res.Result = callResultAndBlockNumber{
-			Result:      res.Result,
-			BlockNumber: blockNumber[0],
-		}
-	case "eth_getBalanceAndBlockNumber":
-		res.Result = balanceAndBlockNumber{
-			Balance:     res.Result,
-			BlockNumber: blockNumber[0],
-		}
-	case "eth_getStorageAtAndBlockNumber":
-		res.Result = storageAndBlockNumber{
-			Storage:     res.Result,
-			BlockNumber: blockNumber[0],
-		}
-	case "eth_getTransactionCountAndBlockNumber":
-		res.Result = transactionCountAndBlockNumber{
-			TransactionCount: res.Result,
-			BlockNumber:      blockNumber[0],
-		}
-	case "eth_getCodeAndBlockNumber":
-		res.Result = codeAndBlockNumber{
-			Code:        res.Result,
-			BlockNumber: blockNumber[0],
-		}
-	case "eth_getBlockTransactionCountAndBlockNumberByNumber":
-		res.Result = blockTransactionCountAndBlockNumber{
-			TransactionCount: res.Result,
-			BlockNumber:      blockNumber[0],
-		}
-	case "eth_getRawTransactionAndBlockNumberByBlockNumberAndIndex":
-		res.Result = rawTransactionAndBlockNumber{
-			RawTransaction: res.Result,
-			BlockNumber:    blockNumber[0],
-		}
-	case "eth_getUncleCountAndBlockNumberByBlockNumber":
-		res.Result = uncleCountAndBlockNumber{
-			UncleCount:  res.Result,
-			BlockNumber: blockNumber[0],
-		}
-	case "eth_getLogsAndBlockRange":
+	if originalMethod == "eth_getLogsAndBlockRange" {
 		fromBlock := blockNumber[0]
 		toBlock := blockNumber[0]
 		if len(blockNumber) > 1 {
 			toBlock = blockNumber[1]
 		}
-		res.Result = logsAndBlockRange{
-			Logs:          res.Result,
+		res.Result = blockRangeResult{
+			Data:          res.Result,
 			StartingBlock: fromBlock,
 			EndingBlock:   toBlock,
 		}
-	case "eth_getBalanceValuesAndBlockNumber":
-		res.Result = balanceValuesAndBlockNumber{
-			Values:      res.Result,
+	} else {
+		res.Result = blockNumberResult{
+			Data:        res.Result,
 			BlockNumber: blockNumber[0],
 		}
 	}
