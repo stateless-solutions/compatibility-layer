@@ -20,6 +20,7 @@ var (
 	keyFilePassword = GetString("KEY_FILE_PASSWORD", "")
 	identity        = MustGetString("IDENTITY")
 	httpPort        = GetString("HTTP_PORT", "8080")
+	configFile      = GetString("CONFIG_FILE", "ethereum.json")
 )
 
 type RPCReq struct {

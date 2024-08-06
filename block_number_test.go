@@ -473,33 +473,6 @@ func TestBlockNumber(t *testing.T) {
 			contentsToRewrite: []string{"safe", "pending"},
 			idsToRewrite:      []string{"22", "23"},
 		},
-		{
-			name: "Balance values and block number by number latest tag",
-			req: []*RPCReq{{
-				Method: "eth_getBalanceValuesAndBlockNumber",
-				ID:     json.RawMessage("21"),
-				Params: json.RawMessage(`["","latest"]`),
-			}},
-			expectedReq: &RPCReq{
-				Method: "eth_getBalanceValues",
-				ID:     json.RawMessage("21"),
-			},
-			expectedReqLength: 2,
-			res: []*RPCResJSON{{
-				ID:     json.RawMessage("21"),
-				Result: "aaa",
-			}, {ID: json.RawMessage("22"),
-				Result: map[string]interface{}{"number": "0x21"}}},
-			expectedRes: &RPCResJSON{
-				ID: json.RawMessage("21"),
-				Result: blockNumberResult{
-					Data:        "aaa",
-					BlockNumber: "0x21",
-				},
-			},
-			contentsToRewrite: []string{"latest"},
-			idsToRewrite:      []string{"22"},
-		},
 	}
 
 	for _, tt := range tests {

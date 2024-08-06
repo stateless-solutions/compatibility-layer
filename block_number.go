@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math/big"
+	"os"
 
 	"github.com/ethereum/go-ethereum/rpc"
 )
@@ -21,32 +23,22 @@ type blockRangeResult struct {
 	EndingBlock   string      `json:"endingBlock"`
 }
 
-var (
-	blockNumberToRegular = map[string]string{
-		"eth_callAndBlockNumber":                                   "eth_call",
-		"eth_getBalanceAndBlockNumber":                             "eth_getBalance",
-		"eth_getStorageAtAndBlockNumber":                           "eth_getStorageAt",
-		"eth_getTransactionCountAndBlockNumber":                    "eth_getTransactionCount",
-		"eth_getCodeAndBlockNumber":                                "eth_getCode",
-		"eth_getBlockTransactionCountAndBlockNumberByNumber":       "eth_getBlockTransactionCountByNumber",
-		"eth_getRawTransactionAndBlockNumberByBlockNumberAndIndex": "eth_getRawTransactionByBlockNumberAndIndex",
-		"eth_getUncleCountAndBlockNumberByBlockNumber":             "eth_getUncleCountByBlockNumber",
-		"eth_getLogsAndBlockRange":                                 "eth_getLogs",
-		"eth_getBalanceValuesAndBlockNumber":                       "eth_getBalanceValues",
-	}
+type Method struct {
+	OriginalMethod           string `json:"originalMethod"`
+	BlockNumberMethod        string `json:"blockNumberMethod"`
+	PositionBlockNumberParam int    `json:"positionBlockNumberParam"`
+	IsBlockRange             bool   `json:"isBlockRange"`
+}
 
-	methodToPos = map[string]int{
-		"eth_callAndBlockNumber":                                   1,
-		"eth_getBalanceAndBlockNumber":                             1,
-		"eth_getStorageAtAndBlockNumber":                           2,
-		"eth_getTransactionCountAndBlockNumber":                    1,
-		"eth_getCodeAndBlockNumber":                                1,
-		"eth_getBlockTransactionCountAndBlockNumberByNumber":       0,
-		"eth_getRawTransactionAndBlockNumberByBlockNumberAndIndex": 0,
-		"eth_getUncleCountAndBlockNumberByBlockNumber":             0,
-		"eth_getLogsAndBlockRange":                                 0,
-		"eth_getBalanceValuesAndBlockNumber":                       1,
-	}
+type MethodsConfig struct {
+	Methods []Method `json:"methods"`
+}
+
+var (
+	// maps to be populated on init
+	blockNumberToRegular            = map[string]string{}
+	blockNumberMethodToPos          = map[string]int{}
+	blockNumberMethodToIsBlockRange = map[string]bool{}
 
 	JSONRPCErrorInternal = -32000
 
@@ -74,6 +66,32 @@ var (
 		HTTPErrorCode: 500,
 	}
 )
+
+// populate maps for block number changes
+func init() {
+	file, err := os.Open(configFile)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	byteValue, err := io.ReadAll(file)
+	if err != nil {
+		panic(err)
+	}
+
+	var config MethodsConfig
+	err = json.Unmarshal(byteValue, &config)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, method := range config.Methods {
+		blockNumberToRegular[method.BlockNumberMethod] = method.OriginalMethod
+		blockNumberMethodToPos[method.BlockNumberMethod] = method.PositionBlockNumberParam
+		blockNumberMethodToIsBlockRange[method.BlockNumberMethod] = method.IsBlockRange
+	}
+}
 
 func remarshalBlockNumberOrHash(current interface{}) (*rpc.BlockNumberOrHash, error) {
 	jv, err := json.Marshal(current)
@@ -106,7 +124,7 @@ func remarshalTagMap(m map[string]interface{}, key string) (*rpc.BlockNumberOrHa
 func getBlockNumbers(req *RPCReq) ([]*rpc.BlockNumberOrHash, error) {
 	_, ok := blockNumberToRegular[req.Method]
 	if ok {
-		pos := methodToPos[req.Method]
+		pos := blockNumberMethodToPos[req.Method]
 
 		if req.Method == "eth_getLogsAndBlockRange" {
 			var p []map[string]interface{}
@@ -430,7 +448,7 @@ func getBlockNumber(res *RPCResJSON, bnHolder map[string]string, bnMethodsBlockN
 func changeResultToBlockNumberStruct(res *RPCResJSON, bnHolder map[string]string, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash, originalMethod string) error {
 	blockNumber := getBlockNumber(res, bnHolder, bnMethodsBlockNumber)
 
-	if originalMethod == "eth_getLogsAndBlockRange" {
+	if blockNumberMethodToIsBlockRange[originalMethod] {
 		fromBlock := blockNumber[0]
 		toBlock := blockNumber[0]
 		if len(blockNumber) > 1 {
