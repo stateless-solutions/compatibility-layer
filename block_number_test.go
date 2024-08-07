@@ -6,6 +6,10 @@ import (
 )
 
 func TestBlockNumber(t *testing.T) {
+	if integration {
+		t.Skip("just run integration test")
+	}
+
 	tests := []struct {
 		name              string
 		req               []*RPCReq
@@ -477,18 +481,20 @@ func TestBlockNumber(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			blockMap, err := getBlockNumberMap(tt.req)
+			b := NewBlockNumberConv(configFile)
+
+			blockMap, err := b.getBlockNumberMap(tt.req)
 			if err != nil {
 				t.Fatalf("Test case %s: Error not expected, got %v", tt.name, err)
 			}
-			changedMethods := changeBlockNumberMethods(tt.req)
+			changedMethods := b.changeBlockNumberMethods(tt.req)
 
 			if tt.req[0].Method != tt.expectedReq.Method {
 				t.Errorf("Test case %s: Expected method %s, got %s", tt.name, tt.expectedReq.Method, tt.req[0].Method)
 			}
 
 			var idsHolder map[string]string
-			tt.req, idsHolder, _ = addBlockNumberMethodsIfNeeded(tt.req, blockMap)
+			tt.req, idsHolder, _ = b.addBlockNumberMethodsIfNeeded(tt.req, blockMap)
 
 			if tt.idsToRewrite != nil && tt.contentsToRewrite != nil {
 				for i := 0; i < len(tt.idsToRewrite); i++ {
@@ -500,7 +506,7 @@ func TestBlockNumber(t *testing.T) {
 				t.Errorf("Test case %s: Expected req length %d, got %d", tt.name, tt.expectedReqLength, len(tt.req))
 			}
 
-			ress, err := changeBlockNumberResponses(tt.res, changedMethods, idsHolder, blockMap)
+			ress, err := b.changeBlockNumberResponses(tt.res, changedMethods, idsHolder, blockMap)
 			if err != tt.expectedErr {
 				t.Fatalf("Test case %s: Expected error %v, got %v", tt.name, tt.expectedErr, err)
 			}

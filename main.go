@@ -61,6 +61,7 @@ type RPCContext struct {
 	Identity        string
 	ChainURL        string
 	HTTPPort        string
+	BlockNumberConv *BlockNumberConv
 	SigningKey      ssh.Signer
 }
 
@@ -79,11 +80,14 @@ func main() {
 		}
 	}
 
+	bn := NewBlockNumberConv(configFile)
+
 	context := &RPCContext{
-		SigningKey: signer,
-		Identity:   identity,
-		ChainURL:   chainURL,
-		HTTPPort:   httpPort,
+		SigningKey:      signer,
+		Identity:        identity,
+		ChainURL:        chainURL,
+		HTTPPort:        httpPort,
+		BlockNumberConv: bn,
 	}
 
 	// Start the server on the specified port
@@ -123,15 +127,15 @@ func (c *RPCContext) parseRPCReq(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (c *RPCContext) modifyReq(w http.ResponseWriter) error {
-	blockMap, err := getBlockNumberMap(c.RPCReqs)
+	blockMap, err := c.BlockNumberConv.getBlockNumberMap(c.RPCReqs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	c.BlockMap = blockMap
-	c.ChangedMethods = changeBlockNumberMethods(c.RPCReqs)
+	c.ChangedMethods = c.BlockNumberConv.changeBlockNumberMethods(c.RPCReqs)
 
-	c.RPCReqs, c.IDsHolder, err = addBlockNumberMethodsIfNeeded(c.RPCReqs, blockMap)
+	c.RPCReqs, c.IDsHolder, err = c.BlockNumberConv.addBlockNumberMethodsIfNeeded(c.RPCReqs, blockMap)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
@@ -245,7 +249,7 @@ func (c *RPCContext) doRPCCall(w http.ResponseWriter, r *http.Request) error {
 
 func (c *RPCContext) modifyRes(w http.ResponseWriter) error {
 	var err error
-	c.RPCRess, err = changeBlockNumberResponses(c.RPCRess, c.ChangedMethods, c.IDsHolder, c.BlockMap)
+	c.RPCRess, err = c.BlockNumberConv.changeBlockNumberResponses(c.RPCRess, c.ChangedMethods, c.IDsHolder, c.BlockMap)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err

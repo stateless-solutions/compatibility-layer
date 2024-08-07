@@ -1,0 +1,8 @@
+{
+    "cases":[
+        {
+            "name": "Success Case One Request",
+            "reqBody": {"jsonrpc":"2.0","method":"eth_getBalanceAndBlockNumber","id":1,"params":["0x20f33ce90a13a4b5e7697e3544c3083b8f8a51d4", "latest"]}
+        }
+    ]
+}

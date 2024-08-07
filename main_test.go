@@ -9,6 +9,10 @@ import (
 )
 
 func TestAttestorHandler(t *testing.T) {
+	if integration {
+		t.Skip("just run integration test")
+	}
+
 	tests := []struct {
 		name                 string
 		handler              http.HandlerFunc
@@ -89,10 +93,13 @@ func TestAttestorHandler(t *testing.T) {
 				panic(err)
 			}
 
+			bn := NewBlockNumberConv(configFile)
+
 			context := &RPCContext{
-				SigningKey: signer,
-				Identity:   identity,
-				ChainURL:   mockServer.URL,
+				SigningKey:      signer,
+				Identity:        identity,
+				ChainURL:        mockServer.URL,
+				BlockNumberConv: bn,
 			}
 
 			// Create a handler using AttestorHandler
