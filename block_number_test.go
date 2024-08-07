@@ -494,7 +494,7 @@ func TestBlockNumber(t *testing.T) {
 			}
 
 			var idsHolder map[string]string
-			tt.req, idsHolder, _ = b.addBlockNumberMethodsIfNeeded(tt.req, blockMap)
+			tt.req, idsHolder, _ = addBlockNumberMethodsIfNeeded(tt.req, blockMap)
 
 			if tt.idsToRewrite != nil && tt.contentsToRewrite != nil {
 				for i := 0; i < len(tt.idsToRewrite); i++ {

@@ -103,7 +103,7 @@ func NewBlockNumberConv(configFile string) *BlockNumberConv {
 	return bnc
 }
 
-func (b *BlockNumberConv) remarshalBlockNumberOrHash(current interface{}) (*rpc.BlockNumberOrHash, error) {
+func remarshalBlockNumberOrHash(current interface{}) (*rpc.BlockNumberOrHash, error) {
 	jv, err := json.Marshal(current)
 	if err != nil {
 		return nil, err
@@ -118,7 +118,7 @@ func (b *BlockNumberConv) remarshalBlockNumberOrHash(current interface{}) (*rpc.
 	return &bnh, nil
 }
 
-func (b *BlockNumberConv) remarshalTagMap(m map[string]interface{}, key string) (*rpc.BlockNumberOrHash, error) {
+func remarshalTagMap(m map[string]interface{}, key string) (*rpc.BlockNumberOrHash, error) {
 	if m[key] == nil || m[key] == "" {
 		return nil, nil
 	}
@@ -128,7 +128,7 @@ func (b *BlockNumberConv) remarshalTagMap(m map[string]interface{}, key string) 
 		return nil, errors.New("expected string")
 	}
 
-	return b.remarshalBlockNumberOrHash(current)
+	return remarshalBlockNumberOrHash(current)
 }
 
 func (b *BlockNumberConv) getBlockNumbers(req *RPCReq) ([]*rpc.BlockNumberOrHash, error) {
@@ -147,7 +147,7 @@ func (b *BlockNumberConv) getBlockNumbers(req *RPCReq) ([]*rpc.BlockNumberOrHash
 				return nil, ErrParseErr
 			}
 
-			block, err := b.remarshalTagMap(p[pos], "blockHash")
+			block, err := remarshalTagMap(p[pos], "blockHash")
 			if err != nil {
 				return nil, err
 			}
@@ -155,7 +155,7 @@ func (b *BlockNumberConv) getBlockNumbers(req *RPCReq) ([]*rpc.BlockNumberOrHash
 				return []*rpc.BlockNumberOrHash{block}, nil // if block hash is set fromBlock and toBlock are ignored
 			}
 
-			fromBlock, err := b.remarshalTagMap(p[pos], "fromBlock")
+			fromBlock, err := remarshalTagMap(p[pos], "fromBlock")
 			if err != nil {
 				return nil, err
 			}
@@ -163,7 +163,7 @@ func (b *BlockNumberConv) getBlockNumbers(req *RPCReq) ([]*rpc.BlockNumberOrHash
 				b := rpc.BlockNumberOrHashWithNumber(rpc.EarliestBlockNumber)
 				fromBlock = &b
 			}
-			toBlock, err := b.remarshalTagMap(p[pos], "toBlock")
+			toBlock, err := remarshalTagMap(p[pos], "toBlock")
 			if err != nil {
 				return nil, err
 			}
@@ -183,11 +183,11 @@ func (b *BlockNumberConv) getBlockNumbers(req *RPCReq) ([]*rpc.BlockNumberOrHash
 			return nil, ErrParseErr
 		}
 
-		bnh, err := b.remarshalBlockNumberOrHash(p[pos])
+		bnh, err := remarshalBlockNumberOrHash(p[pos])
 		if err != nil {
 			s, ok := p[pos].(string)
 			if ok {
-				block, err := b.remarshalBlockNumberOrHash(s)
+				block, err := remarshalBlockNumberOrHash(s)
 				if err != nil {
 					return nil, ErrParseErr
 				}
@@ -219,7 +219,7 @@ func (b *BlockNumberConv) getBlockNumberMap(rpcReqs []*RPCReq) (map[string][]*rp
 	return bnMethodsBlockNumber, nil
 }
 
-func (b *BlockNumberConv) addBlockNumberMethodsIfNeeded(rpcReqs []*RPCReq, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) ([]*RPCReq, map[string]string, error) {
+func addBlockNumberMethodsIfNeeded(rpcReqs []*RPCReq, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) ([]*RPCReq, map[string]string, error) {
 	idsHolder := make(map[string]string, len(bnMethodsBlockNumber))
 
 	for _, bns := range bnMethodsBlockNumber {
@@ -232,7 +232,7 @@ func (b *BlockNumberConv) addBlockNumberMethodsIfNeeded(rpcReqs []*RPCReq, bnMet
 				bH := bn.BlockHash.String()
 				_, ok := idsHolder[bH]
 				if !ok {
-					id, err := b.generateRandomNumberStringWithRetries(rpcReqs, 12)
+					id, err := generateRandomNumberStringWithRetries(rpcReqs, 12)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -246,7 +246,7 @@ func (b *BlockNumberConv) addBlockNumberMethodsIfNeeded(rpcReqs []*RPCReq, bnMet
 			case rpc.PendingBlockNumber:
 				_, ok := idsHolder["pending"]
 				if !ok {
-					id, err := b.generateRandomNumberStringWithRetries(rpcReqs, 12)
+					id, err := generateRandomNumberStringWithRetries(rpcReqs, 12)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -256,7 +256,7 @@ func (b *BlockNumberConv) addBlockNumberMethodsIfNeeded(rpcReqs []*RPCReq, bnMet
 			case rpc.EarliestBlockNumber:
 				_, ok := idsHolder["earliest"]
 				if !ok {
-					id, err := b.generateRandomNumberStringWithRetries(rpcReqs, 12)
+					id, err := generateRandomNumberStringWithRetries(rpcReqs, 12)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -266,7 +266,7 @@ func (b *BlockNumberConv) addBlockNumberMethodsIfNeeded(rpcReqs []*RPCReq, bnMet
 			case rpc.FinalizedBlockNumber:
 				_, ok := idsHolder["finalized"]
 				if !ok {
-					id, err := b.generateRandomNumberStringWithRetries(rpcReqs, 12)
+					id, err := generateRandomNumberStringWithRetries(rpcReqs, 12)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -276,7 +276,7 @@ func (b *BlockNumberConv) addBlockNumberMethodsIfNeeded(rpcReqs []*RPCReq, bnMet
 			case rpc.SafeBlockNumber:
 				_, ok := idsHolder["safe"]
 				if !ok {
-					id, err := b.generateRandomNumberStringWithRetries(rpcReqs, 12)
+					id, err := generateRandomNumberStringWithRetries(rpcReqs, 12)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -286,7 +286,7 @@ func (b *BlockNumberConv) addBlockNumberMethodsIfNeeded(rpcReqs []*RPCReq, bnMet
 			case rpc.LatestBlockNumber:
 				_, ok := idsHolder["latest"]
 				if !ok {
-					id, err := b.generateRandomNumberStringWithRetries(rpcReqs, 12)
+					id, err := generateRandomNumberStringWithRetries(rpcReqs, 12)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -334,7 +334,7 @@ func (b *BlockNumberConv) changeBlockNumberMethods(rpcReqs []*RPCReq) map[string
 	return changedMethods
 }
 
-func (b *BlockNumberConv) generateRandomNumberStringWithRetries(rpcReqs []*RPCReq, n int) (string, error) {
+func generateRandomNumberStringWithRetries(rpcReqs []*RPCReq, n int) (string, error) {
 	retries := 0
 	maxRetries := 5
 	id := ""
@@ -347,7 +347,7 @@ func (b *BlockNumberConv) generateRandomNumberStringWithRetries(rpcReqs []*RPCRe
 		}
 
 		// Check if the generated ID is repeated in the slice
-		if !b.isIDRepeated(id, rpcReqs) {
+		if !isIDRepeated(id, rpcReqs) {
 			break
 		}
 
@@ -374,7 +374,7 @@ func generateRandomNumberString(n int) (string, error) {
 	return randomNumber.String(), nil
 }
 
-func (b *BlockNumberConv) isIDRepeated(id string, rpcReqs []*RPCReq) bool {
+func isIDRepeated(id string, rpcReqs []*RPCReq) bool {
 	for _, rpcReq := range rpcReqs {
 		if string(rpcReq.ID) == id {
 			return true
@@ -383,7 +383,7 @@ func (b *BlockNumberConv) isIDRepeated(id string, rpcReqs []*RPCReq) bool {
 	return false
 }
 
-func (b *BlockNumberConv) getBlockHolder(responses []*RPCResJSON, idsHolder map[string]string) (map[string]string, []*RPCResJSON, error) {
+func getBlockHolder(responses []*RPCResJSON, idsHolder map[string]string) (map[string]string, []*RPCResJSON, error) {
 	bnHolder := make(map[string]string, len(idsHolder))
 	var responsesWithoutBN []*RPCResJSON
 
@@ -414,7 +414,7 @@ func (b *BlockNumberConv) getBlockHolder(responses []*RPCResJSON, idsHolder map[
 }
 
 func (b *BlockNumberConv) changeBlockNumberResponses(responses []*RPCResJSON, changedMethods, idsHolder map[string]string, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) ([]*RPCResJSON, error) {
-	bnHolder, cleanRes, err := b.getBlockHolder(responses, idsHolder)
+	bnHolder, cleanRes, err := getBlockHolder(responses, idsHolder)
 	if err != nil {
 		return nil, err
 	}
@@ -434,7 +434,7 @@ func (b *BlockNumberConv) changeBlockNumberResponses(responses []*RPCResJSON, ch
 	return cleanRes, nil
 }
 
-func (b *BlockNumberConv) getBlockNumber(res *RPCResJSON, bnHolder map[string]string, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) []string {
+func getBlockNumber(res *RPCResJSON, bnHolder map[string]string, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) []string {
 	bns := bnMethodsBlockNumber[string(res.ID)]
 
 	var blocks []string
@@ -456,7 +456,7 @@ func (b *BlockNumberConv) getBlockNumber(res *RPCResJSON, bnHolder map[string]st
 }
 
 func (b *BlockNumberConv) changeResultToBlockNumberStruct(res *RPCResJSON, bnHolder map[string]string, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash, originalMethod string) error {
-	blockNumber := b.getBlockNumber(res, bnHolder, bnMethodsBlockNumber)
+	blockNumber := getBlockNumber(res, bnHolder, bnMethodsBlockNumber)
 
 	if b.blockNumberMethodToIsBlockRange[originalMethod] {
 		fromBlock := blockNumber[0]

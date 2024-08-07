@@ -135,7 +135,7 @@ func (c *RPCContext) modifyReq(w http.ResponseWriter) error {
 	c.BlockMap = blockMap
 	c.ChangedMethods = c.BlockNumberConv.changeBlockNumberMethods(c.RPCReqs)
 
-	c.RPCReqs, c.IDsHolder, err = c.BlockNumberConv.addBlockNumberMethodsIfNeeded(c.RPCReqs, blockMap)
+	c.RPCReqs, c.IDsHolder, err = addBlockNumberMethodsIfNeeded(c.RPCReqs, blockMap)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
