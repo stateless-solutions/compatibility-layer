@@ -1,15 +1,15 @@
-package main
+package blocknumber
 
 import (
 	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"math/big"
 	"os"
 
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/stateless-solutions/stateless-compatibility-layer/models"
 )
 
 type blockNumberResult struct {
@@ -37,25 +37,25 @@ type MethodsConfig struct {
 var (
 	JSONRPCErrorInternal = -32000
 
-	ErrInternalBlockNumberMethodNotMap = &RPCErr{
+	ErrInternalBlockNumberMethodNotMap = &models.RPCErr{
 		Code:          JSONRPCErrorInternal - 23,
 		Message:       "block number response is not a map",
 		HTTPErrorCode: 500,
 	}
 
-	ErrInternalBlockNumberMethodNotNumberEntry = &RPCErr{
+	ErrInternalBlockNumberMethodNotNumberEntry = &models.RPCErr{
 		Code:          JSONRPCErrorInternal - 24,
 		Message:       "block number response does not have number entry",
 		HTTPErrorCode: 500,
 	}
 
-	ErrParseErr = &RPCErr{
+	ErrParseErr = &models.RPCErr{
 		Code:          -32700,
 		Message:       "parse error",
 		HTTPErrorCode: 400,
 	}
 
-	ErrInternal = &RPCErr{
+	ErrInternal = &models.RPCErr{
 		Code:          JSONRPCErrorInternal,
 		Message:       "internal error",
 		HTTPErrorCode: 500,
@@ -70,13 +70,7 @@ type BlockNumberConv struct {
 }
 
 func NewBlockNumberConv(configFile string) *BlockNumberConv {
-	file, err := os.Open(configFile)
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-
-	byteValue, err := io.ReadAll(file)
+	byteValue, err := os.ReadFile(configFile)
 	if err != nil {
 		panic(err)
 	}
@@ -131,7 +125,7 @@ func remarshalTagMap(m map[string]interface{}, key string) (*rpc.BlockNumberOrHa
 	return remarshalBlockNumberOrHash(current)
 }
 
-func (b *BlockNumberConv) getBlockNumbers(req *RPCReq) ([]*rpc.BlockNumberOrHash, error) {
+func (b *BlockNumberConv) getBlockNumbers(req *models.RPCReq) ([]*rpc.BlockNumberOrHash, error) {
 	_, ok := b.blockNumberToRegular[req.Method]
 	if ok {
 		pos := b.blockNumberMethodToPos[req.Method]
@@ -203,7 +197,7 @@ func (b *BlockNumberConv) getBlockNumbers(req *RPCReq) ([]*rpc.BlockNumberOrHash
 	return nil, nil
 }
 
-func (b *BlockNumberConv) getBlockNumberMap(rpcReqs []*RPCReq) (map[string][]*rpc.BlockNumberOrHash, error) {
+func (b *BlockNumberConv) GetBlockNumberMap(rpcReqs []*models.RPCReq) (map[string][]*rpc.BlockNumberOrHash, error) {
 	bnMethodsBlockNumber := make(map[string][]*rpc.BlockNumberOrHash, len(rpcReqs))
 
 	for _, req := range rpcReqs {
@@ -219,7 +213,7 @@ func (b *BlockNumberConv) getBlockNumberMap(rpcReqs []*RPCReq) (map[string][]*rp
 	return bnMethodsBlockNumber, nil
 }
 
-func addBlockNumberMethodsIfNeeded(rpcReqs []*RPCReq, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) ([]*RPCReq, map[string]string, error) {
+func AddBlockNumberMethodsIfNeeded(rpcReqs []*models.RPCReq, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) ([]*models.RPCReq, map[string]string, error) {
 	idsHolder := make(map[string]string, len(bnMethodsBlockNumber))
 
 	for _, bns := range bnMethodsBlockNumber {
@@ -300,8 +294,8 @@ func addBlockNumberMethodsIfNeeded(rpcReqs []*RPCReq, bnMethodsBlockNumber map[s
 	return rpcReqs, idsHolder, nil
 }
 
-func buildGetBlockByHashReq(hash, id string) *RPCReq {
-	return &RPCReq{
+func buildGetBlockByHashReq(hash, id string) *models.RPCReq {
+	return &models.RPCReq{
 		JSONRPC: "2.0",
 		Method:  "eth_getBlockByHash",
 		ID:      json.RawMessage(id),
@@ -309,8 +303,8 @@ func buildGetBlockByHashReq(hash, id string) *RPCReq {
 	}
 }
 
-func buildGetBlockByNumberReq(tag, id string) *RPCReq {
-	return &RPCReq{
+func buildGetBlockByNumberReq(tag, id string) *models.RPCReq {
+	return &models.RPCReq{
 		JSONRPC: "2.0",
 		Method:  "eth_getBlockByNumber",
 		ID:      json.RawMessage(id),
@@ -318,7 +312,7 @@ func buildGetBlockByNumberReq(tag, id string) *RPCReq {
 	}
 }
 
-func (b *BlockNumberConv) changeBlockNumberMethods(rpcReqs []*RPCReq) map[string]string {
+func (b *BlockNumberConv) ChangeBlockNumberMethods(rpcReqs []*models.RPCReq) map[string]string {
 	changedMethods := make(map[string]string, len(rpcReqs))
 
 	for _, rpcReq := range rpcReqs {
@@ -334,7 +328,7 @@ func (b *BlockNumberConv) changeBlockNumberMethods(rpcReqs []*RPCReq) map[string
 	return changedMethods
 }
 
-func generateRandomNumberStringWithRetries(rpcReqs []*RPCReq, n int) (string, error) {
+func generateRandomNumberStringWithRetries(rpcReqs []*models.RPCReq, n int) (string, error) {
 	retries := 0
 	maxRetries := 5
 	id := ""
@@ -374,7 +368,7 @@ func generateRandomNumberString(n int) (string, error) {
 	return randomNumber.String(), nil
 }
 
-func isIDRepeated(id string, rpcReqs []*RPCReq) bool {
+func isIDRepeated(id string, rpcReqs []*models.RPCReq) bool {
 	for _, rpcReq := range rpcReqs {
 		if string(rpcReq.ID) == id {
 			return true
@@ -383,9 +377,9 @@ func isIDRepeated(id string, rpcReqs []*RPCReq) bool {
 	return false
 }
 
-func getBlockHolder(responses []*RPCResJSON, idsHolder map[string]string) (map[string]string, []*RPCResJSON, error) {
+func getBlockHolder(responses []*models.RPCResJSON, idsHolder map[string]string) (map[string]string, []*models.RPCResJSON, error) {
 	bnHolder := make(map[string]string, len(idsHolder))
-	var responsesWithoutBN []*RPCResJSON
+	var responsesWithoutBN []*models.RPCResJSON
 
 	for _, res := range responses {
 		var bnMethod bool
@@ -413,7 +407,7 @@ func getBlockHolder(responses []*RPCResJSON, idsHolder map[string]string) (map[s
 	return bnHolder, responsesWithoutBN, nil
 }
 
-func (b *BlockNumberConv) changeBlockNumberResponses(responses []*RPCResJSON, changedMethods, idsHolder map[string]string, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) ([]*RPCResJSON, error) {
+func (b *BlockNumberConv) ChangeBlockNumberResponses(responses []*models.RPCResJSON, changedMethods, idsHolder map[string]string, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) ([]*models.RPCResJSON, error) {
 	bnHolder, cleanRes, err := getBlockHolder(responses, idsHolder)
 	if err != nil {
 		return nil, err
@@ -434,7 +428,7 @@ func (b *BlockNumberConv) changeBlockNumberResponses(responses []*RPCResJSON, ch
 	return cleanRes, nil
 }
 
-func getBlockNumber(res *RPCResJSON, bnHolder map[string]string, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) []string {
+func getBlockNumber(res *models.RPCResJSON, bnHolder map[string]string, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) []string {
 	bns := bnMethodsBlockNumber[string(res.ID)]
 
 	var blocks []string
@@ -455,7 +449,7 @@ func getBlockNumber(res *RPCResJSON, bnHolder map[string]string, bnMethodsBlockN
 	return blocks
 }
 
-func (b *BlockNumberConv) changeResultToBlockNumberStruct(res *RPCResJSON, bnHolder map[string]string, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash, originalMethod string) error {
+func (b *BlockNumberConv) changeResultToBlockNumberStruct(res *models.RPCResJSON, bnHolder map[string]string, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash, originalMethod string) error {
 	blockNumber := getBlockNumber(res, bnHolder, bnMethodsBlockNumber)
 
 	if b.blockNumberMethodToIsBlockRange[originalMethod] {

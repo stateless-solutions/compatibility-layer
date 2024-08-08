@@ -1,4 +1,4 @@
-package main
+package integrationtests
 
 import (
 	"bytes"
@@ -9,17 +9,22 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	"github.com/stateless-solutions/stateless-compatibility-layer/attestation"
+	blocknumber "github.com/stateless-solutions/stateless-compatibility-layer/block-number"
+	"github.com/stateless-solutions/stateless-compatibility-layer/models"
+	rpccontext "github.com/stateless-solutions/stateless-compatibility-layer/rpc-context"
 )
 
 var urlFlag string
 var integration bool
-var keyfile string
+var keyFile string
 var configFileTest string
 var integrationTestFile string
 
 type IntegrationTestCases struct {
-	Name    string `json:"name"`
-	ReqBody RPCReq `json:"reqBody"`
+	Name    string        `json:"name"`
+	ReqBody models.RPCReq `json:"reqBody"`
 }
 
 type IntegrationTestConfig struct {
@@ -93,14 +98,14 @@ func TestIntegration(t *testing.T) {
 			rec := httptest.NewRecorder()
 
 			// var signer ssh.Signer
-			signer, err := GetSigningKeyFromKeyFile(keyFile)
+			signer, err := attestation.GetSigningKeyFromKeyFile(keyFile)
 			if err != nil {
 				panic(err)
 			}
 
-			bn := NewBlockNumberConv(configFileTest)
+			bn := blocknumber.NewBlockNumberConv(configFileTest)
 
-			context := &RPCContext{
+			context := &rpccontext.RPCContext{
 				SigningKey:      signer,
 				Identity:        identity,
 				ChainURL:        urlFlag,
@@ -108,7 +113,7 @@ func TestIntegration(t *testing.T) {
 			}
 
 			// Create a handler using AttestorHandler
-			handler := http.HandlerFunc(context.handler)
+			handler := http.HandlerFunc(context.Handler)
 
 			// Serve the request using the protected handler
 			handler.ServeHTTP(rec, req)
@@ -116,6 +121,17 @@ func TestIntegration(t *testing.T) {
 			// Check the response code
 			if rec.Code != http.StatusOK {
 				t.Errorf("Test case %s: Expected status code %d, got %d", tt.Name, http.StatusOK, rec.Code)
+			}
+
+			var rpcRes models.RPCResJSON
+			err = json.Unmarshal(rec.Body.Bytes(), &rpcRes)
+			if err != nil {
+				panic(err)
+			}
+
+			// Check for rpc error
+			if rpcRes.Error != nil {
+				t.Errorf("Test case %s: Expected no error, got %s", tt.Name, rpcRes.Error.Error())
 			}
 		})
 	}

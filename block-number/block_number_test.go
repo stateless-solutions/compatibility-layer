@@ -1,44 +1,42 @@
-package main
+package blocknumber
 
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/stateless-solutions/stateless-compatibility-layer/models"
 )
 
 func TestBlockNumber(t *testing.T) {
-	if integration {
-		t.Skip("just run integration test")
-	}
-
 	tests := []struct {
 		name              string
-		req               []*RPCReq
-		expectedReq       *RPCReq
+		req               []*models.RPCReq
+		expectedReq       *models.RPCReq
 		expectedReqLength int
-		res               []*RPCResJSON
+		res               []*models.RPCResJSON
 		idsToRewrite      []string // needed to be able to assest bc in the real code the id is random
 		contentsToRewrite []string
-		expectedRes       *RPCResJSON
+		expectedRes       *models.RPCResJSON
 		expectedErr       error
 	}{
 		{
 			name: "Call and block number latest tag",
-			req: []*RPCReq{{
+			req: []*models.RPCReq{{
 				Method: "eth_callAndBlockNumber",
 				ID:     json.RawMessage("21"),
 				Params: json.RawMessage(`["","latest"]`),
 			}},
-			expectedReq: &RPCReq{
+			expectedReq: &models.RPCReq{
 				Method: "eth_call",
 				ID:     json.RawMessage("21"),
 			},
 			expectedReqLength: 2,
-			res: []*RPCResJSON{{
+			res: []*models.RPCResJSON{{
 				ID:     json.RawMessage("21"),
 				Result: "aaa",
 			}, {ID: json.RawMessage("22"),
 				Result: map[string]interface{}{"number": "0x21"}}},
-			expectedRes: &RPCResJSON{
+			expectedRes: &models.RPCResJSON{
 				ID: json.RawMessage("21"),
 				Result: blockNumberResult{
 					Data:        "aaa",
@@ -50,21 +48,21 @@ func TestBlockNumber(t *testing.T) {
 		},
 		{
 			name: "Balance and block number input block number",
-			req: []*RPCReq{{
+			req: []*models.RPCReq{{
 				Method: "eth_getBalanceAndBlockNumber",
 				ID:     json.RawMessage("21"),
 				Params: json.RawMessage(`["","0x23"]`),
 			}},
-			expectedReq: &RPCReq{
+			expectedReq: &models.RPCReq{
 				Method: "eth_getBalance",
 				ID:     json.RawMessage("21"),
 			},
 			expectedReqLength: 1,
-			res: []*RPCResJSON{{
+			res: []*models.RPCResJSON{{
 				ID:     json.RawMessage("21"),
 				Result: "1",
 			}},
-			expectedRes: &RPCResJSON{
+			expectedRes: &models.RPCResJSON{
 				ID: json.RawMessage("21"),
 				Result: blockNumberResult{
 					Data:        "1",
@@ -74,21 +72,21 @@ func TestBlockNumber(t *testing.T) {
 		},
 		{
 			name: "Storage at and block number input block hash",
-			req: []*RPCReq{{
+			req: []*models.RPCReq{{
 				Method: "eth_getStorageAtAndBlockNumber",
 				ID:     json.RawMessage("21"),
 				Params: json.RawMessage(`["","",{"blockHash":"0x3f07a9c83155594c000642e7d60e8a8a00038d03e9849171a05ed0e2d47acbb3"}]`),
 			}},
-			expectedReq: &RPCReq{
+			expectedReq: &models.RPCReq{
 				Method: "eth_getStorageAt",
 				ID:     json.RawMessage("21"),
 			},
 			expectedReqLength: 2,
-			res: []*RPCResJSON{{
+			res: []*models.RPCResJSON{{
 				ID:     json.RawMessage("21"),
 				Result: "aaa"}, {ID: json.RawMessage("22"),
 				Result: map[string]interface{}{"number": "0x21"}}},
-			expectedRes: &RPCResJSON{
+			expectedRes: &models.RPCResJSON{
 				ID: json.RawMessage("21"),
 				Result: blockNumberResult{
 					Data:        "aaa",
@@ -100,22 +98,22 @@ func TestBlockNumber(t *testing.T) {
 		},
 		{
 			name: "Transaction count and block number pending tag",
-			req: []*RPCReq{{
+			req: []*models.RPCReq{{
 				Method: "eth_getTransactionCountAndBlockNumber",
 				ID:     json.RawMessage("21"),
 				Params: json.RawMessage(`["","pending"]`),
 			}},
-			expectedReq: &RPCReq{
+			expectedReq: &models.RPCReq{
 				Method: "eth_getTransactionCount",
 				ID:     json.RawMessage("21"),
 			},
 			expectedReqLength: 2,
-			res: []*RPCResJSON{{
+			res: []*models.RPCResJSON{{
 				ID:     json.RawMessage("21"),
 				Result: "1",
 			}, {ID: json.RawMessage("22"),
 				Result: map[string]interface{}{"number": "0x21"}}},
-			expectedRes: &RPCResJSON{
+			expectedRes: &models.RPCResJSON{
 				ID: json.RawMessage("21"),
 				Result: blockNumberResult{
 					Data:        "1",
@@ -127,22 +125,22 @@ func TestBlockNumber(t *testing.T) {
 		},
 		{
 			name: "Code and block number earliest tag",
-			req: []*RPCReq{{
+			req: []*models.RPCReq{{
 				Method: "eth_getCodeAndBlockNumber",
 				ID:     json.RawMessage("21"),
 				Params: json.RawMessage(`["","earliest"]`),
 			}},
-			expectedReq: &RPCReq{
+			expectedReq: &models.RPCReq{
 				Method: "eth_getCode",
 				ID:     json.RawMessage("21"),
 			},
 			expectedReqLength: 2,
-			res: []*RPCResJSON{{
+			res: []*models.RPCResJSON{{
 				ID:     json.RawMessage("21"),
 				Result: "1",
 			}, {ID: json.RawMessage("22"),
 				Result: map[string]interface{}{"number": "0x21"}}},
-			expectedRes: &RPCResJSON{
+			expectedRes: &models.RPCResJSON{
 				ID: json.RawMessage("21"),
 				Result: blockNumberResult{
 					Data:        "1",
@@ -154,22 +152,22 @@ func TestBlockNumber(t *testing.T) {
 		},
 		{
 			name: "Code and block number finalized tag",
-			req: []*RPCReq{{
+			req: []*models.RPCReq{{
 				Method: "eth_getCodeAndBlockNumber",
 				ID:     json.RawMessage("21"),
 				Params: json.RawMessage(`["","finalized"]`),
 			}},
-			expectedReq: &RPCReq{
+			expectedReq: &models.RPCReq{
 				Method: "eth_getCode",
 				ID:     json.RawMessage("21"),
 			},
 			expectedReqLength: 2,
-			res: []*RPCResJSON{{
+			res: []*models.RPCResJSON{{
 				ID:     json.RawMessage("21"),
 				Result: "1",
 			}, {ID: json.RawMessage("22"),
 				Result: map[string]interface{}{"number": "0x21"}}},
-			expectedRes: &RPCResJSON{
+			expectedRes: &models.RPCResJSON{
 				ID: json.RawMessage("21"),
 				Result: blockNumberResult{
 					Data:        "1",
@@ -181,22 +179,22 @@ func TestBlockNumber(t *testing.T) {
 		},
 		{
 			name: "Code and block number safe tag",
-			req: []*RPCReq{{
+			req: []*models.RPCReq{{
 				Method: "eth_getCodeAndBlockNumber",
 				ID:     json.RawMessage("21"),
 				Params: json.RawMessage(`["","safe"]`),
 			}},
-			expectedReq: &RPCReq{
+			expectedReq: &models.RPCReq{
 				Method: "eth_getCode",
 				ID:     json.RawMessage("21"),
 			},
 			expectedReqLength: 2,
-			res: []*RPCResJSON{{
+			res: []*models.RPCResJSON{{
 				ID:     json.RawMessage("21"),
 				Result: "1",
 			}, {ID: json.RawMessage("22"),
 				Result: map[string]interface{}{"number": "0x21"}}},
-			expectedRes: &RPCResJSON{
+			expectedRes: &models.RPCResJSON{
 				ID: json.RawMessage("21"),
 				Result: blockNumberResult{
 					Data:        "1",
@@ -208,43 +206,43 @@ func TestBlockNumber(t *testing.T) {
 		},
 		{
 			name: "No block number method",
-			req: []*RPCReq{{
+			req: []*models.RPCReq{{
 				Method: "eth_getCode",
 				ID:     json.RawMessage("21"),
 				Params: json.RawMessage(`["","0x23"]`),
 			}},
-			expectedReq: &RPCReq{
+			expectedReq: &models.RPCReq{
 				Method: "eth_getCode",
 				ID:     json.RawMessage("21"),
 			},
 			expectedReqLength: 1,
-			res: []*RPCResJSON{{
+			res: []*models.RPCResJSON{{
 				ID:     json.RawMessage("21"),
 				Result: "1",
 			}},
-			expectedRes: &RPCResJSON{
+			expectedRes: &models.RPCResJSON{
 				ID:     json.RawMessage("21"),
 				Result: "1",
 			},
 		},
 		{
 			name: "Block number response not map",
-			req: []*RPCReq{{
+			req: []*models.RPCReq{{
 				Method: "eth_callAndBlockNumber",
 				ID:     json.RawMessage("21"),
 				Params: json.RawMessage(`["","latest"]`),
 			}},
-			expectedReq: &RPCReq{
+			expectedReq: &models.RPCReq{
 				Method: "eth_call",
 				ID:     json.RawMessage("21"),
 			},
 			expectedReqLength: 2,
-			res: []*RPCResJSON{{
+			res: []*models.RPCResJSON{{
 				ID:     json.RawMessage("21"),
 				Result: "aaa",
 			}, {ID: json.RawMessage("22"),
 				Result: "a"}},
-			expectedRes: &RPCResJSON{
+			expectedRes: &models.RPCResJSON{
 				ID: json.RawMessage("21"),
 				Result: blockNumberResult{
 					Data:        "aaa",
@@ -257,22 +255,22 @@ func TestBlockNumber(t *testing.T) {
 		},
 		{
 			name: "Call and block number latest tag",
-			req: []*RPCReq{{
+			req: []*models.RPCReq{{
 				Method: "eth_callAndBlockNumber",
 				ID:     json.RawMessage("21"),
 				Params: json.RawMessage(`["","latest"]`),
 			}},
-			expectedReq: &RPCReq{
+			expectedReq: &models.RPCReq{
 				Method: "eth_call",
 				ID:     json.RawMessage("21"),
 			},
 			expectedReqLength: 2,
-			res: []*RPCResJSON{{
+			res: []*models.RPCResJSON{{
 				ID:     json.RawMessage("21"),
 				Result: "aaa",
 			}, {ID: json.RawMessage("22"),
 				Result: map[string]interface{}{"block": "0x21"}}},
-			expectedRes: &RPCResJSON{
+			expectedRes: &models.RPCResJSON{
 				ID: json.RawMessage("21"),
 				Result: blockNumberResult{
 					Data:        "aaa",
@@ -285,22 +283,22 @@ func TestBlockNumber(t *testing.T) {
 		},
 		{
 			name: "Block transaction count and block number by number latest tag",
-			req: []*RPCReq{{
+			req: []*models.RPCReq{{
 				Method: "eth_getBlockTransactionCountAndBlockNumberByNumber",
 				ID:     json.RawMessage("21"),
 				Params: json.RawMessage(`["latest"]`),
 			}},
-			expectedReq: &RPCReq{
+			expectedReq: &models.RPCReq{
 				Method: "eth_getBlockTransactionCountByNumber",
 				ID:     json.RawMessage("21"),
 			},
 			expectedReqLength: 2,
-			res: []*RPCResJSON{{
+			res: []*models.RPCResJSON{{
 				ID:     json.RawMessage("21"),
 				Result: "aaa",
 			}, {ID: json.RawMessage("22"),
 				Result: map[string]interface{}{"number": "0x21"}}},
-			expectedRes: &RPCResJSON{
+			expectedRes: &models.RPCResJSON{
 				ID: json.RawMessage("21"),
 				Result: blockNumberResult{
 					Data:        "aaa",
@@ -312,22 +310,22 @@ func TestBlockNumber(t *testing.T) {
 		},
 		{
 			name: "Raw transaction and block number by number and index latest tag",
-			req: []*RPCReq{{
+			req: []*models.RPCReq{{
 				Method: "eth_getRawTransactionAndBlockNumberByBlockNumberAndIndex",
 				ID:     json.RawMessage("21"),
 				Params: json.RawMessage(`["latest"]`),
 			}},
-			expectedReq: &RPCReq{
+			expectedReq: &models.RPCReq{
 				Method: "eth_getRawTransactionByBlockNumberAndIndex",
 				ID:     json.RawMessage("21"),
 			},
 			expectedReqLength: 2,
-			res: []*RPCResJSON{{
+			res: []*models.RPCResJSON{{
 				ID:     json.RawMessage("21"),
 				Result: "aaa",
 			}, {ID: json.RawMessage("22"),
 				Result: map[string]interface{}{"number": "0x21"}}},
-			expectedRes: &RPCResJSON{
+			expectedRes: &models.RPCResJSON{
 				ID: json.RawMessage("21"),
 				Result: blockNumberResult{
 					Data:        "aaa",
@@ -339,22 +337,22 @@ func TestBlockNumber(t *testing.T) {
 		},
 		{
 			name: "Uncle count and block number by number latest tag",
-			req: []*RPCReq{{
+			req: []*models.RPCReq{{
 				Method: "eth_getUncleCountAndBlockNumberByBlockNumber",
 				ID:     json.RawMessage("21"),
 				Params: json.RawMessage(`["latest"]`),
 			}},
-			expectedReq: &RPCReq{
+			expectedReq: &models.RPCReq{
 				Method: "eth_getUncleCountByBlockNumber",
 				ID:     json.RawMessage("21"),
 			},
 			expectedReqLength: 2,
-			res: []*RPCResJSON{{
+			res: []*models.RPCResJSON{{
 				ID:     json.RawMessage("21"),
 				Result: "aaa",
 			}, {ID: json.RawMessage("22"),
 				Result: map[string]interface{}{"number": "0x21"}}},
-			expectedRes: &RPCResJSON{
+			expectedRes: &models.RPCResJSON{
 				ID: json.RawMessage("21"),
 				Result: blockNumberResult{
 					Data:        "aaa",
@@ -366,24 +364,24 @@ func TestBlockNumber(t *testing.T) {
 		},
 		{
 			name: "Log and block range no input",
-			req: []*RPCReq{{
+			req: []*models.RPCReq{{
 				Method: "eth_getLogsAndBlockRange",
 				ID:     json.RawMessage("21"),
 				Params: json.RawMessage(`[{}]`),
 			}},
-			expectedReq: &RPCReq{
+			expectedReq: &models.RPCReq{
 				Method: "eth_getLogs",
 				ID:     json.RawMessage("21"),
 			},
 			expectedReqLength: 3,
-			res: []*RPCResJSON{{
+			res: []*models.RPCResJSON{{
 				ID:     json.RawMessage("21"),
 				Result: "aaa",
 			}, {ID: json.RawMessage("22"),
 				Result: map[string]interface{}{"number": "0x21"}},
 				{ID: json.RawMessage("23"),
 					Result: map[string]interface{}{"number": "0x22"}}},
-			expectedRes: &RPCResJSON{
+			expectedRes: &models.RPCResJSON{
 				ID: json.RawMessage("21"),
 				Result: blockRangeResult{
 					Data:          "aaa",
@@ -396,21 +394,21 @@ func TestBlockNumber(t *testing.T) {
 		},
 		{
 			name: "Log and block range block number input",
-			req: []*RPCReq{{
+			req: []*models.RPCReq{{
 				Method: "eth_getLogsAndBlockRange",
 				ID:     json.RawMessage("21"),
 				Params: json.RawMessage(`[{"fromBlock": "0x21", "toBlock": "0x22"}]`),
 			}},
-			expectedReq: &RPCReq{
+			expectedReq: &models.RPCReq{
 				Method: "eth_getLogs",
 				ID:     json.RawMessage("21"),
 			},
 			expectedReqLength: 1,
-			res: []*RPCResJSON{{
+			res: []*models.RPCResJSON{{
 				ID:     json.RawMessage("21"),
 				Result: "aaa",
 			}},
-			expectedRes: &RPCResJSON{
+			expectedRes: &models.RPCResJSON{
 				ID: json.RawMessage("21"),
 				Result: blockRangeResult{
 					Data:          "aaa",
@@ -421,22 +419,22 @@ func TestBlockNumber(t *testing.T) {
 		},
 		{
 			name: "Log and block range block hash input",
-			req: []*RPCReq{{
+			req: []*models.RPCReq{{
 				Method: "eth_getLogsAndBlockRange",
 				ID:     json.RawMessage("21"),
 				Params: json.RawMessage(`[{"blockHash":"0x3f07a9c83155594c000642e7d60e8a8a00038d03e9849171a05ed0e2d47acbb3"}]`),
 			}},
-			expectedReq: &RPCReq{
+			expectedReq: &models.RPCReq{
 				Method: "eth_getLogs",
 				ID:     json.RawMessage("21"),
 			},
 			expectedReqLength: 2,
-			res: []*RPCResJSON{{
+			res: []*models.RPCResJSON{{
 				ID:     json.RawMessage("21"),
 				Result: "aaa",
 			}, {ID: json.RawMessage("22"),
 				Result: map[string]interface{}{"number": "0x21"}}},
-			expectedRes: &RPCResJSON{
+			expectedRes: &models.RPCResJSON{
 				ID: json.RawMessage("21"),
 				Result: blockRangeResult{
 					Data:          "aaa",
@@ -449,24 +447,24 @@ func TestBlockNumber(t *testing.T) {
 		},
 		{
 			name: "Log and block range tag input",
-			req: []*RPCReq{{
+			req: []*models.RPCReq{{
 				Method: "eth_getLogsAndBlockRange",
 				ID:     json.RawMessage("21"),
 				Params: json.RawMessage(`[{"fromBlock": "safe", "toBlock": "pending"}]`),
 			}},
-			expectedReq: &RPCReq{
+			expectedReq: &models.RPCReq{
 				Method: "eth_getLogs",
 				ID:     json.RawMessage("21"),
 			},
 			expectedReqLength: 3,
-			res: []*RPCResJSON{{
+			res: []*models.RPCResJSON{{
 				ID:     json.RawMessage("21"),
 				Result: "aaa",
 			}, {ID: json.RawMessage("22"),
 				Result: map[string]interface{}{"number": "0x21"}},
 				{ID: json.RawMessage("23"),
 					Result: map[string]interface{}{"number": "0x22"}}},
-			expectedRes: &RPCResJSON{
+			expectedRes: &models.RPCResJSON{
 				ID: json.RawMessage("21"),
 				Result: blockRangeResult{
 					Data:          "aaa",
@@ -481,20 +479,20 @@ func TestBlockNumber(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			b := NewBlockNumberConv(configFile)
+			b := NewBlockNumberConv("../supported-chains/ethereum.json")
 
-			blockMap, err := b.getBlockNumberMap(tt.req)
+			blockMap, err := b.GetBlockNumberMap(tt.req)
 			if err != nil {
 				t.Fatalf("Test case %s: Error not expected, got %v", tt.name, err)
 			}
-			changedMethods := b.changeBlockNumberMethods(tt.req)
+			changedMethods := b.ChangeBlockNumberMethods(tt.req)
 
 			if tt.req[0].Method != tt.expectedReq.Method {
 				t.Errorf("Test case %s: Expected method %s, got %s", tt.name, tt.expectedReq.Method, tt.req[0].Method)
 			}
 
 			var idsHolder map[string]string
-			tt.req, idsHolder, _ = addBlockNumberMethodsIfNeeded(tt.req, blockMap)
+			tt.req, idsHolder, _ = AddBlockNumberMethodsIfNeeded(tt.req, blockMap)
 
 			if tt.idsToRewrite != nil && tt.contentsToRewrite != nil {
 				for i := 0; i < len(tt.idsToRewrite); i++ {
@@ -506,7 +504,7 @@ func TestBlockNumber(t *testing.T) {
 				t.Errorf("Test case %s: Expected req length %d, got %d", tt.name, tt.expectedReqLength, len(tt.req))
 			}
 
-			ress, err := b.changeBlockNumberResponses(tt.res, changedMethods, idsHolder, blockMap)
+			ress, err := b.ChangeBlockNumberResponses(tt.res, changedMethods, idsHolder, blockMap)
 			if err != tt.expectedErr {
 				t.Fatalf("Test case %s: Expected error %v, got %v", tt.name, tt.expectedErr, err)
 			}
