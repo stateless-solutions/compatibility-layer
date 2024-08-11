@@ -121,6 +121,7 @@ func TestIntegration(t *testing.T) {
 			// Check the response code
 			if rec.Code != http.StatusOK {
 				t.Errorf("Test case %s: Expected status code %d, got %d", tt.Name, http.StatusOK, rec.Code)
+				return
 			}
 
 			var rpcRes models.RPCResJSON
@@ -132,6 +133,7 @@ func TestIntegration(t *testing.T) {
 			// Check for rpc error
 			if rpcRes.Error != nil {
 				t.Errorf("Test case %s: Expected no error, got %s", tt.Name, rpcRes.Error.Error())
+				return
 			}
 		})
 	}
