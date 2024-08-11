@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stateless-solutions/stateless-compatibility-layer/models"
@@ -69,29 +70,32 @@ type BlockNumberConv struct {
 	blockNumberMethodToIsBlockRange map[string]bool
 }
 
-func NewBlockNumberConv(configFile string) *BlockNumberConv {
-	byteValue, err := os.ReadFile(configFile)
-	if err != nil {
-		panic(err)
-	}
-
-	var config MethodsConfig
-	err = json.Unmarshal(byteValue, &config)
-	if err != nil {
-		panic(err)
-	}
-
+func NewBlockNumberConv(configFiles string) *BlockNumberConv {
 	bnc := &BlockNumberConv{
-		configfile:                      configFile,
+		configfile:                      configFiles,
 		blockNumberToRegular:            map[string]string{},
 		blockNumberMethodToPos:          map[string]int{},
 		blockNumberMethodToIsBlockRange: map[string]bool{},
 	}
 
-	for _, method := range config.Methods {
-		bnc.blockNumberToRegular[method.BlockNumberMethod] = method.OriginalMethod
-		bnc.blockNumberMethodToPos[method.BlockNumberMethod] = method.PositionBlockNumberParam
-		bnc.blockNumberMethodToIsBlockRange[method.BlockNumberMethod] = method.IsBlockRange
+	files := strings.Split(configFiles, ",")
+	for _, file := range files {
+		byteValue, err := os.ReadFile(file)
+		if err != nil {
+			panic(err)
+		}
+
+		var config MethodsConfig
+		err = json.Unmarshal(byteValue, &config)
+		if err != nil {
+			panic(err)
+		}
+
+		for _, method := range config.Methods {
+			bnc.blockNumberToRegular[method.BlockNumberMethod] = method.OriginalMethod
+			bnc.blockNumberMethodToPos[method.BlockNumberMethod] = method.PositionBlockNumberParam
+			bnc.blockNumberMethodToIsBlockRange[method.BlockNumberMethod] = method.IsBlockRange
+		}
 	}
 
 	return bnc

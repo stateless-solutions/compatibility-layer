@@ -17,7 +17,7 @@ var (
 	keyFilePassword = environment.GetString("KEY_FILE_PASSWORD", "")
 	identity        = environment.MustGetString("IDENTITY")
 	httpPort        = environment.GetString("HTTP_PORT", "8080")
-	configFile      = environment.GetString("CONFIG_FILE", "supported-chains/ethereum.json")
+	configFiles     = environment.GetString("CONFIG_FILES", "supported-chains/ethereum.json")
 )
 
 func main() {
@@ -35,7 +35,7 @@ func main() {
 		}
 	}
 
-	bn := blocknumber.NewBlockNumberConv(configFile)
+	bn := blocknumber.NewBlockNumberConv(configFiles)
 
 	context := &rpccontext.RPCContext{
 		SigningKey:      signer,
