@@ -14,7 +14,7 @@ Before you begin, ensure you have the following installed on your system:
 1. **Clone the repository:**
 
     ```sh
-    git clone https://github.com/yourusername/stateless-compatibility-layer.git
+    git clone https://github.com/stateless-solutions/stateless-compatibility-layer.git
     cd stateless-compatibility-layer
     ```
 
@@ -34,9 +34,10 @@ Before you begin, ensure you have the following installed on your system:
     KEY_FILE_PASSWORD=
     IDENTITY=identity
     HTTP_PORT=8080
+    CONFIG_FILES=/path/to/your/chain.json
     ```
 
-    Ensure that the `KEY_FILE` path points to the actual location of your key file.
+    Ensure that the `KEY_FILE` and `CONFIG_FILES` paths point to the actual locations of your files.
 
 ## Building the Docker Image
 
@@ -52,20 +53,21 @@ Before you begin, ensure you have the following installed on your system:
 
 ## Running the Application
 
-1. **Ensure your key file is in place:**
+1. **Ensure your key and configuration files are in place:**
 
-    Make sure the key file specified in the `KEY_FILE` environment variable exists and is accessible.
+    Make sure the key file specified in the `KEY_FILE` and `CONFIG_FILES` environment variable exist and are accessible.
 
 2. **Run the Docker container:**
 
-    Use the following command to run the Docker container. This command reads environment variables from the `.env` file, mounts the key file, and starts the application:
+    Use the following command to run the Docker container. This command reads environment variables from the `.env` file, mounts the key and configuration files, and starts the application:
 
     ```sh
-    docker run --env-file=.env -v /path/to/your/.key.pem:/app/.key.pem -d -p 8080:8080 --name comp-layer comp-layer --p=true
+    docker run --env-file=.env -v /path/to/your/.key.pem:/app/.key.pem -v /path/to/your/chain.json:/app/chain.json -d -p 8080:8080 --name comp-layer comp-layer --p=true
     ```
 
     - `--env-file=.env`: Loads the environment variables from the `.env` file.
     - `-v /path/to/your/.key.pem:/app/.key.pem`: Mounts the key file into the Docker container. Ensure this path matches the `KEY_FILE` variable in the `.env` file.
+    - `-v /path/to/your/chain.json:/app/chain.json`: Mounts the config file into the Docker container. Ensure this path matches the `CONFIG_FILES` variable in the `.env` file.
     - `-d`: Runs the container in detached mode.
     - `-p 8080:8080`: Maps port 8080 on your host to port 8080 in the container. The exposed port depends on the `HTTP_PORT` environment variable.
 
@@ -91,13 +93,14 @@ docker rm comp-layer
 
 ## Notes
 
-- Ensure the `CHAIN_URL`, `KEY_FILE`, `KEY_FILE_PASSWORD`, `IDENTITY`, and `HTTP_PORT` environment variables are correctly set in your `.env` file.
+- Ensure the `CHAIN_URL`, `KEY_FILE`, `KEY_FILE_PASSWORD`, `IDENTITY`, `CONFIG_FILES` and `HTTP_PORT` environment variables are correctly set in your `.env` file.
+- The `CONFIG_FILES` env var supports multiple files, just input them separated by a `,` with no spaces.
 - The port specified in the `HTTP_PORT` environment variable should match the port mapping in the Docker run command.
 
 ## Troubleshooting
 
 - **Port Conflicts**: If the specified port is already in use, you can change the `HTTP_PORT` variable in the `.env` file and update the port mapping in the Docker run command accordingly.
-- **Key File**: Ensure the key file path is correct and the file has the necessary permissions.
+- **Key File and Config Files**: Ensure the file paths are correct and the files have the necessary permissions.
 
 For further assistance, please contact the repository maintainer.
 
