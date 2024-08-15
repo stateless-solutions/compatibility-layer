@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stateless-solutions/stateless-compatibility-layer/attestation"
 	blocknumber "github.com/stateless-solutions/stateless-compatibility-layer/block-number"
@@ -21,6 +22,7 @@ var integration bool
 var keyFile string
 var configFileTest string
 var integrationTestFile string
+var waitTime int64
 
 type IntegrationTestCases struct {
 	Name    string        `json:"name"`
@@ -37,6 +39,7 @@ func init() {
 	flag.StringVar(&keyFile, "keyfile", "", "Path of key file for attestions")
 	flag.StringVar(&configFileTest, "configFile", "", "Path of config file")
 	flag.StringVar(&integrationTestFile, "integrationFile", "", "Path of integration tests config file")
+	flag.Int64Var(&waitTime, "waitTime", 0, "Wait time in between reqs in miliseconds")
 }
 
 func TestMain(m *testing.M) {
@@ -136,5 +139,6 @@ func TestIntegration(t *testing.T) {
 				return
 			}
 		})
+		time.Sleep(time.Duration(waitTime) * time.Millisecond)
 	}
 }

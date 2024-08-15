@@ -475,6 +475,66 @@ func TestBlockNumber(t *testing.T) {
 			contentsToRewrite: []string{"safe", "pending"},
 			idsToRewrite:      []string{"22", "23"},
 		},
+		{
+			name: "Error on data request",
+			req: []*models.RPCReq{{
+				Method: "eth_callAndBlockNumber",
+				ID:     json.RawMessage("21"),
+				Params: json.RawMessage(`["","latest"]`),
+			}},
+			expectedReq: &models.RPCReq{
+				Method: "eth_call",
+				ID:     json.RawMessage("21"),
+			},
+			expectedReqLength: 2,
+			res: []*models.RPCResJSON{{
+				ID: json.RawMessage("21"),
+				Error: &models.RPCErr{
+					Code:    21,
+					Message: "call not good",
+				},
+			}, {ID: json.RawMessage("22"),
+				Result: map[string]interface{}{"number": "0x21"}}},
+			expectedRes: &models.RPCResJSON{
+				ID: json.RawMessage("21"),
+				Error: &models.RPCErr{
+					Code:    21,
+					Message: "call not good",
+				},
+			},
+			contentsToRewrite: []string{"latest"},
+			idsToRewrite:      []string{"22"},
+		},
+		{
+			name: "Error on number request",
+			req: []*models.RPCReq{{
+				Method: "eth_callAndBlockNumber",
+				ID:     json.RawMessage("21"),
+				Params: json.RawMessage(`["","latest"]`),
+			}},
+			expectedReq: &models.RPCReq{
+				Method: "eth_call",
+				ID:     json.RawMessage("21"),
+			},
+			expectedReqLength: 2,
+			res: []*models.RPCResJSON{{
+				ID:     json.RawMessage("21"),
+				Result: "aaa",
+			}, {ID: json.RawMessage("22"),
+				Error: &models.RPCErr{
+					Code:    21,
+					Message: "block number not good",
+				}}},
+			expectedRes: &models.RPCResJSON{
+				ID: json.RawMessage("21"),
+				Error: &models.RPCErr{
+					Code:    21,
+					Message: "block number not good",
+				},
+			},
+			contentsToRewrite: []string{"latest"},
+			idsToRewrite:      []string{"22"},
+		},
 	}
 
 	for _, tt := range tests {
@@ -510,6 +570,12 @@ func TestBlockNumber(t *testing.T) {
 			}
 
 			if err == nil {
+				if tt.expectedRes.Error != nil {
+					if ress[0].Error.Message != tt.expectedRes.Error.Message {
+						t.Errorf("Test case %s: Expected rpc error %s, got %s", tt.name, tt.expectedRes.Error.Message, tt.res[0].Error.Message)
+					}
+				}
+
 				if ress[0].Result != tt.expectedRes.Result {
 					t.Errorf("Test case %s: Expected response %s, got %s", tt.name, tt.expectedRes.Result, tt.res[0].Result)
 				}

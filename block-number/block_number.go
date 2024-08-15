@@ -381,25 +381,15 @@ func isIDRepeated(id string, rpcReqs []*models.RPCReq) bool {
 	return false
 }
 
-func getBlockHolder(responses []*models.RPCResJSON, idsHolder map[string]string) (map[string]string, []*models.RPCResJSON, error) {
-	bnHolder := make(map[string]string, len(idsHolder))
+func getBlockHolder(responses []*models.RPCResJSON, idsHolder map[string]string) (map[string]*models.RPCResJSON, []*models.RPCResJSON, error) {
+	bnHolder := make(map[string]*models.RPCResJSON, len(idsHolder))
 	var responsesWithoutBN []*models.RPCResJSON
 
 	for _, res := range responses {
 		var bnMethod bool
 		for content, id := range idsHolder {
 			if string(res.ID) == id {
-				resMap, ok := res.Result.(map[string]interface{})
-				if !ok {
-					return nil, nil, ErrInternalBlockNumberMethodNotMap
-				}
-
-				block, ok := resMap["number"].(string)
-				if !ok {
-					return nil, nil, ErrInternalBlockNumberMethodNotNumberEntry
-				}
-
-				bnHolder[content] = block
+				bnHolder[content] = res
 				bnMethod = true
 			}
 		}
@@ -432,29 +422,73 @@ func (b *BlockNumberConv) ChangeBlockNumberResponses(responses []*models.RPCResJ
 	return cleanRes, nil
 }
 
-func getBlockNumber(res *models.RPCResJSON, bnHolder map[string]string, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) []string {
+func convertFromResultToBNString(result interface{}) (string, error) {
+	resMap, ok := result.(map[string]interface{})
+	if !ok {
+		return "", ErrInternalBlockNumberMethodNotMap
+	}
+
+	block, ok := resMap["number"].(string)
+	if !ok {
+		return "", ErrInternalBlockNumberMethodNotNumberEntry
+	}
+
+	return block, nil
+}
+
+func getBlockNumber(res *models.RPCResJSON, bnHolder map[string]*models.RPCResJSON, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) ([]string, *models.RPCErr, error) {
 	bns := bnMethodsBlockNumber[string(res.ID)]
 
 	var blocks []string
+	var bnError *models.RPCErr
 	for _, bn := range bns {
 		if bns[0].BlockHash != nil {
-			blocks = append(blocks, bnHolder[bn.BlockHash.String()])
+			bnh := bnHolder[bn.BlockHash.String()]
+			if bnh.Error != nil {
+				bnError = bnh.Error
+				break // if there was an error the rest of the response is invalid
+			}
+			bnString, err := convertFromResultToBNString(bnh.Result)
+			if err != nil {
+				return nil, nil, err
+			}
+			blocks = append(blocks, bnString)
 			break // block hash can just be one per ID
 		}
+
 		bnString := bn.BlockNumber.String()
 		tagBlock, ok := bnHolder[bnString]
 		if ok {
-			blocks = append(blocks, tagBlock)
+			if tagBlock.Error != nil {
+				bnError = tagBlock.Error
+				break // if there was an error the rest of the response is invalid
+			}
+			tagBlockString, err := convertFromResultToBNString(tagBlock.Result)
+			if err != nil {
+				return nil, nil, err
+			}
+			blocks = append(blocks, tagBlockString)
 			continue
 		}
 		blocks = append(blocks, bnString)
 	}
 
-	return blocks
+	return blocks, bnError, nil
 }
 
-func (b *BlockNumberConv) changeResultToBlockNumberStruct(res *models.RPCResJSON, bnHolder map[string]string, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash, originalMethod string) error {
-	blockNumber := getBlockNumber(res, bnHolder, bnMethodsBlockNumber)
+func (b *BlockNumberConv) changeResultToBlockNumberStruct(res *models.RPCResJSON, bnHolder map[string]*models.RPCResJSON, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash, originalMethod string) error {
+	if res.Error != nil {
+		return nil // if there is an error the rest of the response is invalid
+	}
+	blockNumber, bnError, err := getBlockNumber(res, bnHolder, bnMethodsBlockNumber)
+	if err != nil {
+		return err
+	}
+	if bnError != nil {
+		res.Result = nil // if there is an error the rest of the response is invalid
+		res.Error = bnError
+		return nil
+	}
 
 	if b.blockNumberMethodToIsBlockRange[originalMethod] {
 		fromBlock := blockNumber[0]

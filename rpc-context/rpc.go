@@ -17,6 +17,14 @@ import (
 )
 
 type RPCContext struct {
+	Identity        string
+	ChainURL        string
+	HTTPPort        string
+	BlockNumberConv *blocknumber.BlockNumberConv
+	SigningKey      ssh.Signer
+}
+
+type reqHandler struct {
 	IsSlice         bool
 	IsGzip          bool
 	HTTPResponse    *http.Response
@@ -26,14 +34,9 @@ type RPCContext struct {
 	BlockMap        map[string][]*rpc.BlockNumberOrHash
 	ChangedMethods  map[string]string
 	IDsHolder       map[string]string
-	Identity        string
-	ChainURL        string
-	HTTPPort        string
-	BlockNumberConv *blocknumber.BlockNumberConv
-	SigningKey      ssh.Signer
 }
 
-func (c *RPCContext) parseRPCReq(w http.ResponseWriter, r *http.Request) error {
+func (c *RPCContext) parseRPCReq(w http.ResponseWriter, r *http.Request, rh *reqHandler) error {
 	// Read the request body
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -53,26 +56,26 @@ func (c *RPCContext) parseRPCReq(w http.ResponseWriter, r *http.Request) error {
 			http.Error(w, "Invalid request format", http.StatusBadRequest)
 			return errors.New("Invalid request format")
 		}
-		c.IsSlice = true
-		c.RPCReqs = rpcReqs
+		rh.IsSlice = true
+		rh.RPCReqs = rpcReqs
 	} else {
-		c.IsSlice = false
-		c.RPCReqs = []*models.RPCReq{rpcReq}
+		rh.IsSlice = false
+		rh.RPCReqs = []*models.RPCReq{rpcReq}
 	}
 
 	return nil
 }
 
-func (c *RPCContext) modifyReq(w http.ResponseWriter) error {
-	blockMap, err := c.BlockNumberConv.GetBlockNumberMap(c.RPCReqs)
+func (c *RPCContext) modifyReq(w http.ResponseWriter, rh *reqHandler) error {
+	blockMap, err := c.BlockNumberConv.GetBlockNumberMap(rh.RPCReqs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	c.BlockMap = blockMap
-	c.ChangedMethods = c.BlockNumberConv.ChangeBlockNumberMethods(c.RPCReqs)
+	rh.BlockMap = blockMap
+	rh.ChangedMethods = c.BlockNumberConv.ChangeBlockNumberMethods(rh.RPCReqs)
 
-	c.RPCReqs, c.IDsHolder, err = blocknumber.AddBlockNumberMethodsIfNeeded(c.RPCReqs, blockMap)
+	rh.RPCReqs, rh.IDsHolder, err = blocknumber.AddBlockNumberMethodsIfNeeded(rh.RPCReqs, blockMap)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
@@ -81,11 +84,11 @@ func (c *RPCContext) modifyReq(w http.ResponseWriter) error {
 	return nil
 }
 
-func (c *RPCContext) doRPCCall(w http.ResponseWriter, r *http.Request) error {
+func (c *RPCContext) doRPCCall(w http.ResponseWriter, r *http.Request, rh *reqHandler) error {
 	// Marshal the modified request body
 	var modifiedBody []byte
 	var err error
-	modifiedBody, err = json.Marshal(c.RPCReqs)
+	modifiedBody, err = json.Marshal(rh.RPCReqs)
 	if err != nil {
 		http.Error(w, "Failed to marshal modified request", http.StatusInternalServerError)
 		return errors.New("Failed to marshal modified request")
@@ -112,12 +115,12 @@ func (c *RPCContext) doRPCCall(w http.ResponseWriter, r *http.Request) error {
 	}
 	defer resp.Body.Close()
 
-	c.HTTPResponse = resp
+	rh.HTTPResponse = resp
 
 	// Check if the response is gzipped and decompress if necessary
 	var respBody []byte
 	if resp.Header.Get("Content-Encoding") == "gzip" {
-		c.IsGzip = true
+		rh.IsGzip = true
 		gzr, err := gzip.NewReader(resp.Body)
 		if err != nil {
 			http.Error(w, "Failed to create gzip reader", http.StatusInternalServerError)
@@ -146,7 +149,7 @@ func (c *RPCContext) doRPCCall(w http.ResponseWriter, r *http.Request) error {
 		// Send the modified response back to the original client
 		w.Header().Set("Content-Type", "application/json")
 
-		if c.IsGzip {
+		if rh.IsGzip {
 			var buf bytes.Buffer
 			gzw := gzip.NewWriter(&buf)
 			if _, err := gzw.Write(respBody); err != nil {
@@ -176,23 +179,23 @@ func (c *RPCContext) doRPCCall(w http.ResponseWriter, r *http.Request) error {
 			http.Error(w, "Invalid response format", http.StatusBadRequest)
 			return errors.New("Invalid response format")
 		}
-		c.RPCRess = rpcRess
+		rh.RPCRess = rpcRess
 	} else {
-		c.RPCRess = []*models.RPCResJSON{rpcRes}
+		rh.RPCRess = []*models.RPCResJSON{rpcRes}
 	}
 
 	return nil
 }
 
-func (c *RPCContext) modifyRes(w http.ResponseWriter) error {
+func (c *RPCContext) modifyRes(w http.ResponseWriter, rh *reqHandler) error {
 	var err error
-	c.RPCRess, err = c.BlockNumberConv.ChangeBlockNumberResponses(c.RPCRess, c.ChangedMethods, c.IDsHolder, c.BlockMap)
+	rh.RPCRess, err = c.BlockNumberConv.ChangeBlockNumberResponses(rh.RPCRess, rh.ChangedMethods, rh.IDsHolder, rh.BlockMap)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 
-	c.RPCRessAttested, err = attestation.AttestRess(c.RPCRess, c.Identity, c.SigningKey)
+	rh.RPCRessAttested, err = attestation.AttestRess(rh.RPCRess, c.Identity, c.SigningKey)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
@@ -201,14 +204,14 @@ func (c *RPCContext) modifyRes(w http.ResponseWriter) error {
 	return nil
 }
 
-func (c *RPCContext) returnRes(w http.ResponseWriter) error {
+func (c *RPCContext) returnRes(w http.ResponseWriter, rh *reqHandler) error {
 	// Marshal the modified response body
 	var modifiedRespBody []byte
 	var err error
-	if c.IsSlice {
-		modifiedRespBody, err = json.Marshal(c.RPCRessAttested)
+	if rh.IsSlice {
+		modifiedRespBody, err = json.Marshal(rh.RPCRessAttested)
 	} else {
-		modifiedRespBody, err = json.Marshal(c.RPCRessAttested[0])
+		modifiedRespBody, err = json.Marshal(rh.RPCRessAttested[0])
 	}
 	if err != nil {
 		http.Error(w, "Failed to marshal modified response", http.StatusInternalServerError)
@@ -216,13 +219,13 @@ func (c *RPCContext) returnRes(w http.ResponseWriter) error {
 	}
 
 	// Copy the headers from the response
-	for k, v := range c.HTTPResponse.Header {
+	for k, v := range rh.HTTPResponse.Header {
 		w.Header()[k] = v
 	}
 
 	// Send the modified response back to the original client
 	w.Header().Set("Content-Type", "application/json")
-	if c.IsGzip {
+	if rh.IsGzip {
 		// Compress the response
 		var buf bytes.Buffer
 		gzw := gzip.NewWriter(&buf)
@@ -245,27 +248,29 @@ func (c *RPCContext) returnRes(w http.ResponseWriter) error {
 }
 
 func (c *RPCContext) Handler(w http.ResponseWriter, r *http.Request) {
-	err := c.parseRPCReq(w, r)
+	rh := &reqHandler{}
+
+	err := c.parseRPCReq(w, r, rh)
 	if err != nil {
 		return
 	}
 
-	err = c.modifyReq(w)
+	err = c.modifyReq(w, rh)
 	if err != nil {
 		return
 	}
 
-	err = c.doRPCCall(w, r)
+	err = c.doRPCCall(w, r, rh)
 	if err != nil {
 		return
 	}
 
-	err = c.modifyRes(w)
+	err = c.modifyRes(w, rh)
 	if err != nil {
 		return
 	}
 
-	err = c.returnRes(w)
+	err = c.returnRes(w, rh)
 	if err != nil {
 		return
 	}

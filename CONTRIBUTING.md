@@ -82,7 +82,7 @@ After adding the necessary files, you can run the integration tests to ensure ev
 - **Command to Run Tests**: You need to be in the `integration-tests` directory and run the following command:
 
   ```bash
-  go test -v -url=https://dummy.blockchain.node -integration=true -keyfile=../rpc-context/test-data/.dummy_key.pem -configFile=../supported-chains/dummychain.json -integrationFile=test-data/dummy_integration_test.json
+  go test -v -url=https://dummy.blockchain.node -integration=true -keyfile=../rpc-context/test-data/.dummy_key.pem -configFile=../supported-chains/dummychain.json -integrationFile=test-data/dummy_integration_test.json -waitTime=500
   ```
 
 - **Explanation of Flags**:
@@ -92,6 +92,7 @@ After adding the necessary files, you can run the integration tests to ensure ev
   - **`-keyfile`**: The path to the key file used for signing transactions during tests. Replace with the appropriate key file.
   - **`-configFile`**: The path to the JSON file in the `supported-chains` directory that specifies the methods for the new chain.
   - **`-integrationFile`**: The path to the integration test JSON file located in the `integration-tests/test-data` directory.
+  - **`-waitTime=`**: Wait time in between requests in miliseconds. This flag is optional and it's used to prevent the tests to be rate limited.
 
 ### 4. Review Checklist
 
