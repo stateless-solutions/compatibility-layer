@@ -453,7 +453,7 @@ func getBlockNumber(res *models.RPCResJSON, bnHolder map[string]*models.RPCResJS
 				return nil, nil, err
 			}
 			blocks = append(blocks, bnString)
-			break // block hash can just be one per ID
+			continue
 		}
 
 		bnString := bn.BlockNumber.String()
