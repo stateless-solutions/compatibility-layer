@@ -3,55 +3,55 @@
     {
       "blockNumberMethod": "eth_callAndBlockNumber",
       "originalMethod": "eth_call",
-      "positionBlockNumberParam": 1,
+      "positionsBlockNumberParam": [1],
       "isBlockRange": false
     },
     {
       "blockNumberMethod": "eth_getBalanceAndBlockNumber",
       "originalMethod": "eth_getBalance",
-      "positionBlockNumberParam": 1,
+      "positionsBlockNumberParam": [1],
       "isBlockRange": false
     },
     {
       "blockNumberMethod": "eth_getStorageAtAndBlockNumber",
       "originalMethod": "eth_getStorageAt",
-      "positionBlockNumberParam": 2,
+      "positionsBlockNumberParam": [2],
       "isBlockRange": false
     },
     {
       "blockNumberMethod": "eth_getTransactionCountAndBlockNumber",
       "originalMethod": "eth_getTransactionCount",
-      "positionBlockNumberParam": 1,
+      "positionsBlockNumberParam": [1],
       "isBlockRange": false
     },
     {
       "blockNumberMethod": "eth_getCodeAndBlockNumber",
       "originalMethod": "eth_getCode",
-      "positionBlockNumberParam": 1,
+      "positionsBlockNumberParam": [1],
       "isBlockRange": false
     },
     {
       "blockNumberMethod": "eth_getBlockTransactionCountAndBlockNumberByNumber",
       "originalMethod": "eth_getBlockTransactionCountByNumber",
-      "positionBlockNumberParam": 0,
+      "positionsBlockNumberParam": [0],
       "isBlockRange": false
     },
     {
       "blockNumberMethod": "eth_getRawTransactionAndBlockNumberByBlockNumberAndIndex",
       "originalMethod": "eth_getRawTransactionByBlockNumberAndIndex",
-      "positionBlockNumberParam": 0,
+      "positionsBlockNumberParam": [0],
       "isBlockRange": false
     },
     {
       "blockNumberMethod": "eth_getUncleCountAndBlockNumberByBlockNumber",
       "originalMethod": "eth_getUncleCountByBlockNumber",
-      "positionBlockNumberParam": 0,
+      "positionsBlockNumberParam": [0],
       "isBlockRange": false
     },
     {
       "blockNumberMethod": "eth_getLogsAndBlockRange",
       "originalMethod": "eth_getLogs",
-      "positionBlockNumberParam": 0,
+      "customHandler": "handleGetLogsAndBlockRange",
       "isBlockRange": true
     }
   ]

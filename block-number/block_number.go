@@ -25,10 +25,11 @@ type blockRangeResult struct {
 }
 
 type Method struct {
-	OriginalMethod           string `json:"originalMethod"`
-	BlockNumberMethod        string `json:"blockNumberMethod"`
-	PositionBlockNumberParam int    `json:"positionBlockNumberParam"`
-	IsBlockRange             bool   `json:"isBlockRange"`
+	OriginalMethod            string `json:"originalMethod"`
+	BlockNumberMethod         string `json:"blockNumberMethod"`
+	PositionsBlockNumberParam []int  `json:"positionsBlockNumberParam,omitempty"`
+	CustomHandler             string `json:"customHandler,omitempty"`
+	IsBlockRange              bool   `json:"isBlockRange"`
 }
 
 type MethodsConfig struct {
@@ -50,6 +51,12 @@ var (
 		HTTPErrorCode: 500,
 	}
 
+	ErrInternalCustomHandlerNotFound = &models.RPCErr{
+		Code:          JSONRPCErrorInternal - 25,
+		Message:       "custom handler of function not found",
+		HTTPErrorCode: 500,
+	}
+
 	ErrParseErr = &models.RPCErr{
 		Code:          -32700,
 		Message:       "parse error",
@@ -64,18 +71,20 @@ var (
 )
 
 type BlockNumberConv struct {
-	configfile                      string
-	blockNumberToRegular            map[string]string
-	blockNumberMethodToPos          map[string]int
-	blockNumberMethodToIsBlockRange map[string]bool
+	configfile                       string
+	blockNumberToRegular             map[string]string
+	blockNumberMethodToPos           map[string][]int
+	blockNumberMethodToIsBlockRange  map[string]bool
+	blockNumberMethodToCustomHandler map[string]string
 }
 
 func NewBlockNumberConv(configFiles string) *BlockNumberConv {
 	bnc := &BlockNumberConv{
-		configfile:                      configFiles,
-		blockNumberToRegular:            map[string]string{},
-		blockNumberMethodToPos:          map[string]int{},
-		blockNumberMethodToIsBlockRange: map[string]bool{},
+		configfile:                       configFiles,
+		blockNumberToRegular:             map[string]string{},
+		blockNumberMethodToPos:           map[string][]int{},
+		blockNumberMethodToIsBlockRange:  map[string]bool{},
+		blockNumberMethodToCustomHandler: map[string]string{},
 	}
 
 	files := strings.Split(configFiles, ",")
@@ -93,8 +102,9 @@ func NewBlockNumberConv(configFiles string) *BlockNumberConv {
 
 		for _, method := range config.Methods {
 			bnc.blockNumberToRegular[method.BlockNumberMethod] = method.OriginalMethod
-			bnc.blockNumberMethodToPos[method.BlockNumberMethod] = method.PositionBlockNumberParam
+			bnc.blockNumberMethodToPos[method.BlockNumberMethod] = method.PositionsBlockNumberParam
 			bnc.blockNumberMethodToIsBlockRange[method.BlockNumberMethod] = method.IsBlockRange
+			bnc.blockNumberMethodToCustomHandler[method.BlockNumberMethod] = method.CustomHandler
 		}
 	}
 
@@ -132,44 +142,12 @@ func remarshalTagMap(m map[string]interface{}, key string) (*rpc.BlockNumberOrHa
 func (b *BlockNumberConv) getBlockNumbers(req *models.RPCReq) ([]*rpc.BlockNumberOrHash, error) {
 	_, ok := b.blockNumberToRegular[req.Method]
 	if ok {
-		pos := b.blockNumberMethodToPos[req.Method]
-
-		if req.Method == "eth_getLogsAndBlockRange" {
-			var p []map[string]interface{}
-			err := json.Unmarshal(req.Params, &p)
-			if err != nil {
-				return nil, err
+		if b.blockNumberMethodToCustomHandler[req.Method] != "" {
+			handlerFunc, ok := handlers[b.blockNumberMethodToCustomHandler[req.Method]]
+			if !ok {
+				return nil, ErrInternalCustomHandlerNotFound
 			}
-
-			if len(p) <= pos {
-				return nil, ErrParseErr
-			}
-
-			block, err := remarshalTagMap(p[pos], "blockHash")
-			if err != nil {
-				return nil, err
-			}
-			if block != nil && block.BlockHash != nil {
-				return []*rpc.BlockNumberOrHash{block}, nil // if block hash is set fromBlock and toBlock are ignored
-			}
-
-			fromBlock, err := remarshalTagMap(p[pos], "fromBlock")
-			if err != nil {
-				return nil, err
-			}
-			if fromBlock == nil || fromBlock.BlockNumber == nil {
-				b := rpc.BlockNumberOrHashWithNumber(rpc.EarliestBlockNumber)
-				fromBlock = &b
-			}
-			toBlock, err := remarshalTagMap(p[pos], "toBlock")
-			if err != nil {
-				return nil, err
-			}
-			if toBlock == nil || toBlock.BlockNumber == nil {
-				b := rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber)
-				toBlock = &b
-			}
-			return []*rpc.BlockNumberOrHash{fromBlock, toBlock}, nil // always keep this order
+			return handlerFunc(req)
 		}
 
 		var p []interface{}
@@ -177,25 +155,31 @@ func (b *BlockNumberConv) getBlockNumbers(req *models.RPCReq) ([]*rpc.BlockNumbe
 		if err != nil {
 			return nil, err
 		}
-		if len(p) <= pos {
-			return nil, ErrParseErr
-		}
 
-		bnh, err := remarshalBlockNumberOrHash(p[pos])
-		if err != nil {
-			s, ok := p[pos].(string)
-			if ok {
-				block, err := remarshalBlockNumberOrHash(s)
-				if err != nil {
-					return nil, ErrParseErr
-				}
-				return []*rpc.BlockNumberOrHash{block}, nil
-			} else {
+		var bns []*rpc.BlockNumberOrHash
+		for _, pos := range b.blockNumberMethodToPos[req.Method] {
+			if len(p) <= pos {
 				return nil, ErrParseErr
 			}
-		} else {
-			return []*rpc.BlockNumberOrHash{bnh}, nil
+
+			bnh, err := remarshalBlockNumberOrHash(p[pos])
+			if err != nil {
+				s, ok := p[pos].(string)
+				if ok {
+					block, err := remarshalBlockNumberOrHash(s)
+					if err != nil {
+						return nil, ErrParseErr
+					}
+					bns = append(bns, block)
+				} else {
+					return nil, ErrParseErr
+				}
+			} else {
+				bns = append(bns, bnh)
+			}
 		}
+
+		return bns, nil
 	}
 
 	return nil, nil
