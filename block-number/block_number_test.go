@@ -535,6 +535,67 @@ func TestBlockNumber(t *testing.T) {
 			contentsToRewrite: []string{"latest"},
 			idsToRewrite:      []string{"22"},
 		},
+		{
+			name: "Error on number with hash request",
+			req: []*models.RPCReq{{
+				Method: "eth_getStorageAtAndBlockNumber",
+				ID:     json.RawMessage("21"),
+				Params: json.RawMessage(`["","",{"blockHash":"0x3f07a9c83155594c000642e7d60e8a8a00038d03e9849171a05ed0e2d47acbb3"}]`),
+			}},
+			expectedReq: &models.RPCReq{
+				Method: "eth_getStorageAt",
+				ID:     json.RawMessage("21"),
+			},
+			expectedReqLength: 2,
+			res: []*models.RPCResJSON{{
+				ID:     json.RawMessage("21"),
+				Result: "aaa"}, {ID: json.RawMessage("22"),
+				Error: &models.RPCErr{
+					Code:    21,
+					Message: "block number not good",
+				}}},
+			expectedRes: &models.RPCResJSON{
+				ID: json.RawMessage("21"),
+				Error: &models.RPCErr{
+					Code:    21,
+					Message: "block number not good",
+				},
+			},
+			contentsToRewrite: []string{"0x3f07a9c83155594c000642e7d60e8a8a00038d03e9849171a05ed0e2d47acbb3"},
+			idsToRewrite:      []string{"22"},
+		},
+		{
+			name: "Error on block number request with block range",
+			req: []*models.RPCReq{{
+				Method: "eth_getLogsAndBlockRange",
+				ID:     json.RawMessage("21"),
+				Params: json.RawMessage(`[{}]`),
+			}},
+			expectedReq: &models.RPCReq{
+				Method: "eth_getLogs",
+				ID:     json.RawMessage("21"),
+			},
+			expectedReqLength: 3,
+			res: []*models.RPCResJSON{{
+				ID:     json.RawMessage("21"),
+				Result: "aaa",
+			}, {ID: json.RawMessage("22"),
+				Result: map[string]interface{}{"number": "0x21"}},
+				{ID: json.RawMessage("23"),
+					Error: &models.RPCErr{
+						Code:    21,
+						Message: "block number not good",
+					}}},
+			expectedRes: &models.RPCResJSON{
+				ID: json.RawMessage("21"),
+				Error: &models.RPCErr{
+					Code:    21,
+					Message: "block number not good",
+				},
+			},
+			contentsToRewrite: []string{"earliest", "latest"},
+			idsToRewrite:      []string{"22", "23"},
+		},
 	}
 
 	for _, tt := range tests {
