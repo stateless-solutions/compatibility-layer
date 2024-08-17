@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"reflect"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/rpc"
@@ -143,11 +144,17 @@ func (b *BlockNumberConv) getBlockNumbers(req *models.RPCReq) ([]*rpc.BlockNumbe
 	_, ok := b.blockNumberToRegular[req.Method]
 	if ok {
 		if b.blockNumberMethodToCustomHandler[req.Method] != "" {
-			handlerFunc, ok := handlers[b.blockNumberMethodToCustomHandler[req.Method]]
-			if !ok {
+			method := reflect.ValueOf(customHandlersHolder{}).MethodByName(b.blockNumberMethodToCustomHandler[req.Method])
+			if !method.IsValid() {
 				return nil, ErrInternalCustomHandlerNotFound
 			}
-			return handlerFunc(req)
+			result := method.Call([]reflect.Value{
+				reflect.ValueOf(req),
+			})
+			blockNumbers := result[0].Interface().([]*rpc.BlockNumberOrHash)
+			err, _ := result[1].Interface().(error)
+
+			return blockNumbers, err
 		}
 
 		var p []interface{}

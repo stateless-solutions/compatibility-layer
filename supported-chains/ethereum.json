@@ -51,7 +51,7 @@
     {
       "blockNumberMethod": "eth_getLogsAndBlockRange",
       "originalMethod": "eth_getLogs",
-      "customHandler": "handleGetLogsAndBlockRange",
+      "customHandler": "HandleGetLogsAndBlockRange",
       "isBlockRange": true
     }
   ]

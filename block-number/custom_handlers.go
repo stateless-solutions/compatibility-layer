@@ -2,30 +2,30 @@ package blocknumber
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
-	"runtime"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stateless-solutions/stateless-compatibility-layer/models"
 )
 
-var handlers = map[string]func(*models.RPCReq) ([]*rpc.BlockNumberOrHash, error){
-	getFunctionName(handleGetLogsAndBlockRange): handleGetLogsAndBlockRange,
+type customHandlersHolder struct{}
+
+// this validates on start if all custom handlers have correct structure
+func init() {
+	expectedType := reflect.TypeOf(func(customHandlersHolder, *models.RPCReq) ([]*rpc.BlockNumberOrHash, error) { return nil, nil })
+	holderType := reflect.TypeOf(customHandlersHolder{})
+
+	for i := 0; i < holderType.NumMethod(); i++ {
+		method := holderType.Method(i)
+
+		if method.Type != expectedType {
+			panic(fmt.Sprintf("method %s has an incorrect signature: expected %v, got %v", method.Name, expectedType, method.Type))
+		}
+	}
 }
 
-func getFunctionName(i interface{}) string {
-	fullName := runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
-	if idx := strings.LastIndex(fullName, "/"); idx != -1 {
-		fullName = fullName[idx+1:]
-	}
-	if idx := strings.LastIndex(fullName, "."); idx != -1 {
-		fullName = fullName[idx+1:]
-	}
-	return fullName
-}
-
-func handleGetLogsAndBlockRange(req *models.RPCReq) ([]*rpc.BlockNumberOrHash, error) {
+func (customHandlersHolder) HandleGetLogsAndBlockRange(req *models.RPCReq) ([]*rpc.BlockNumberOrHash, error) {
 	pos := 0
 
 	var p []map[string]interface{}
