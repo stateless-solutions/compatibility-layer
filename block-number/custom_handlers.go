@@ -2,28 +2,12 @@ package blocknumber
 
 import (
 	"encoding/json"
-	"fmt"
-	"reflect"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stateless-solutions/stateless-compatibility-layer/models"
 )
 
 type customHandlersHolder struct{}
-
-// this validates on start if all custom handlers have correct structure
-func init() {
-	expectedType := reflect.TypeOf(func(customHandlersHolder, *models.RPCReq) ([]*rpc.BlockNumberOrHash, error) { return nil, nil })
-	holderType := reflect.TypeOf(customHandlersHolder{})
-
-	for i := 0; i < holderType.NumMethod(); i++ {
-		method := holderType.Method(i)
-
-		if method.Type != expectedType {
-			panic(fmt.Sprintf("method %s has an incorrect signature: expected %v, got %v", method.Name, expectedType, method.Type))
-		}
-	}
-}
 
 func (customHandlersHolder) HandleGetLogsAndBlockRange(req *models.RPCReq) ([]*rpc.BlockNumberOrHash, error) {
 	pos := 0

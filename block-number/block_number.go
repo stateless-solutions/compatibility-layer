@@ -71,6 +71,20 @@ var (
 	}
 )
 
+// this validates on start if all custom handlers have correct structure
+func init() {
+	expectedType := reflect.TypeOf(func(customHandlersHolder, *models.RPCReq) ([]*rpc.BlockNumberOrHash, error) { return nil, nil })
+	holderType := reflect.TypeOf(customHandlersHolder{})
+
+	for i := 0; i < holderType.NumMethod(); i++ {
+		method := holderType.Method(i)
+
+		if method.Type != expectedType {
+			panic(fmt.Sprintf("method %s has an incorrect signature: expected %v, got %v", method.Name, expectedType, method.Type))
+		}
+	}
+}
+
 type BlockNumberConv struct {
 	configfile                       string
 	blockNumberToRegular             map[string]string
