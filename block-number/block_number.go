@@ -52,12 +52,6 @@ var (
 		HTTPErrorCode: 500,
 	}
 
-	ErrInternalCustomHandlerNotFound = &models.RPCErr{
-		Code:          JSONRPCErrorInternal - 25,
-		Message:       "custom handler of function not found",
-		HTTPErrorCode: 500,
-	}
-
 	ErrParseErr = &models.RPCErr{
 		Code:          -32700,
 		Message:       "parse error",
@@ -120,6 +114,12 @@ func NewBlockNumberConv(configFiles string) *BlockNumberConv {
 			bnc.blockNumberMethodToPos[method.BlockNumberMethod] = method.PositionsBlockNumberParam
 			bnc.blockNumberMethodToIsBlockRange[method.BlockNumberMethod] = method.IsBlockRange
 			bnc.blockNumberMethodToCustomHandler[method.BlockNumberMethod] = method.CustomHandler
+			if method.CustomHandler != "" {
+				handler := reflect.ValueOf(customHandlersHolder{}).MethodByName(method.CustomHandler)
+				if !handler.IsValid() {
+					panic(fmt.Sprintf("custom handler %s for method %s is not implemented", method.CustomHandler, method.BlockNumberMethod))
+				}
+			}
 		}
 	}
 
@@ -158,10 +158,8 @@ func (b *BlockNumberConv) getBlockNumbers(req *models.RPCReq) ([]*rpc.BlockNumbe
 	_, ok := b.blockNumberToRegular[req.Method]
 	if ok {
 		if b.blockNumberMethodToCustomHandler[req.Method] != "" {
+			// all the custom handler validations are done before on the init or the constructor
 			method := reflect.ValueOf(customHandlersHolder{}).MethodByName(b.blockNumberMethodToCustomHandler[req.Method])
-			if !method.IsValid() {
-				return nil, ErrInternalCustomHandlerNotFound
-			}
 			result := method.Call([]reflect.Value{
 				reflect.ValueOf(req),
 			})
