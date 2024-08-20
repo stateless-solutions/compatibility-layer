@@ -57,7 +57,7 @@ Before you begin, ensure you have the following installed on your system:
 
     Make sure the key file specified in the `KEY_FILE` and `CONFIG_FILES` environment variable exist and are accessible.
 
-    <a name="json-chain-config-file"></a>
+    <a name="json-chain-config-file"></a> 
     **JSON chain config file:**
 
     There is an example of this file in `supported-chains/ethereum.json`
@@ -85,14 +85,14 @@ Before you begin, ensure you have the following installed on your system:
     ```
 
     - **Explanation of Fields**:
-    - **`blockNumberMethod`**: The method name used to retrieve data along with the block number.
-    - **`originalMethod`**: The original method name without block number support.
-    - **`positionBlockNumberParam`**: Represents the 0-based index positions of the block number parameters in the method's parameter list. If there are multiple positions specified (indicating a range), the first one is treated as the "from" block, and the last one as the "to" block. For this range to be used, the `isBlockRange` parameter must be set to `true`; otherwise, any additional block numbers will be ignored.
-    The parameters at these positions must be of the geth's standard [BlockNumbeOrHash](https://github.com/ethereum/go-ethereum/blob/master/rpc/types.go#L146) type to extract the block number(s). If the parameters are of a different type, you should implement a custom handler to process them correctly.
-    - **`customHandler`**: The name of the custom handler function that must be used for the method. 
-    This handler must have the following signature: `func(*models.RPCReq) ([]*rpc.BlockNumberOrHash, error)`. It is mandatory that this function be implemented as a public method within the `customHandlersHolder` struct, which is located in the `block-number/custom_handlers.go` file.
-    This parameter is optional. If not specified, the method will default to using the `positionsBlockNumberParam` to extract the block number(s).
-    - **`isBlockRange`**: A boolean indicating whether the method supports a range of blocks (i.e., if the block number parameter can specify a block range).
+        - **`blockNumberMethod`**: The method name used to retrieve data along with the block number.
+        - **`originalMethod`**: The original method name without block number support.
+        - **`positionBlockNumberParam`**: Represents the 0-based index positions of the block number parameters in the method's parameter list. If there are multiple positions specified (indicating a range), the first one is treated as the "from" block, and the last one as the "to" block. For this range to be used, the `isBlockRange` parameter must be set to `true`; otherwise, any additional block numbers will be ignored.
+        The parameters at these positions must be of the geth's standard [BlockNumbeOrHash](https://github.com/ethereum/go-ethereum/blob/master/rpc/types.go#L146) type to extract the block number(s). If the parameters are of a different type, you should implement a custom handler to process them correctly.
+        - **`customHandler`**: The name of the custom handler function that must be used for the method. 
+        This handler must have the following signature: `func(*models.RPCReq) ([]*rpc.BlockNumberOrHash, error)`. It is mandatory that this function be implemented as a public method within the `customHandlersHolder` struct, which is located in the `block-number/custom_handlers.go` file.
+        This parameter is optional. If not specified, the method will default to using the `positionsBlockNumberParam` to extract the block number(s).
+        - **`isBlockRange`**: A boolean indicating whether the method supports a range of blocks (i.e., if the block number parameter can specify a block range).
 
 2. **Run the Docker container:**
 
