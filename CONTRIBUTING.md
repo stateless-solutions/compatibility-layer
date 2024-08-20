@@ -10,32 +10,7 @@ If you are adding support for a new blockchain, follow these instructions carefu
 ### 1. JSON File for Supported Chains
 
 - **File Location**: The JSON file must be added to the `supported-chains` directory.
-- **File Structure**: Ensure that the JSON file adheres to the following structure:
-
-  ```json
-  {
-    "methods": [
-      {
-        "blockNumberMethod": "eth_dummyMethodWithBlockNumber",
-        "originalMethod": "eth_dummyMethod",
-        "positionBlockNumberParam": 1,
-        "isBlockRange": false
-      },
-      {
-        "blockNumberMethod": "eth_anotherDummyMethodWithBlockNumber",
-        "originalMethod": "eth_anotherDummyMethod",
-        "positionBlockNumberParam": 0,
-        "isBlockRange": true
-      }
-    ]
-  }
-  ```
-
-- **Explanation of Fields**:
-  - **`blockNumberMethod`**: The method name used to retrieve data along with the block number.
-  - **`originalMethod`**: The original method name without block number support.
-  - **`positionBlockNumberParam`**: The position (0-based index) of the block number parameter in the method's parameters list.
-  - **`isBlockRange`**: A boolean indicating whether the method supports a range of blocks (i.e., if the block number parameter can specify a block range).
+- **File Structure**: [Explained on the README](README.md#json-chain-config-file)
 
 ### 2. JSON File for Integration Tests
 
