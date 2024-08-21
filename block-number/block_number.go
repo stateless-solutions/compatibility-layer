@@ -84,7 +84,7 @@ type BlockNumberConv struct {
 	blockNumberToRegular             map[string]string
 	blockNumberMethodToPos           map[string][]int
 	blockNumberMethodToIsBlockRange  map[string]bool
-	blockNumberMethodToCustomHandler map[string]string
+	blockNumberMethodToCustomHandler map[string]func(*models.RPCReq) ([]*rpc.BlockNumberOrHash, error)
 }
 
 func NewBlockNumberConv(configFiles string) *BlockNumberConv {
@@ -93,7 +93,7 @@ func NewBlockNumberConv(configFiles string) *BlockNumberConv {
 		blockNumberToRegular:             map[string]string{},
 		blockNumberMethodToPos:           map[string][]int{},
 		blockNumberMethodToIsBlockRange:  map[string]bool{},
-		blockNumberMethodToCustomHandler: map[string]string{},
+		blockNumberMethodToCustomHandler: map[string]func(*models.RPCReq) ([]*rpc.BlockNumberOrHash, error){},
 	}
 
 	files := strings.Split(configFiles, ",")
@@ -113,12 +113,14 @@ func NewBlockNumberConv(configFiles string) *BlockNumberConv {
 			bnc.blockNumberToRegular[method.BlockNumberMethod] = method.OriginalMethod
 			bnc.blockNumberMethodToPos[method.BlockNumberMethod] = method.PositionsBlockNumberParam
 			bnc.blockNumberMethodToIsBlockRange[method.BlockNumberMethod] = method.IsBlockRange
-			bnc.blockNumberMethodToCustomHandler[method.BlockNumberMethod] = method.CustomHandler
 			if method.CustomHandler != "" {
 				handler := reflect.ValueOf(customHandlersHolder{}).MethodByName(method.CustomHandler)
 				if !handler.IsValid() {
 					panic(fmt.Sprintf("custom handler %s for method %s is not implemented", method.CustomHandler, method.BlockNumberMethod))
 				}
+				// on init it already validates all the methods on custom handler are of the expected signature
+				handlerFunc := handler.Interface().(func(*models.RPCReq) ([]*rpc.BlockNumberOrHash, error))
+				bnc.blockNumberMethodToCustomHandler[method.BlockNumberMethod] = handlerFunc
 			}
 		}
 	}
@@ -157,16 +159,9 @@ func remarshalTagMap(m map[string]interface{}, key string) (*rpc.BlockNumberOrHa
 func (b *BlockNumberConv) getBlockNumbers(req *models.RPCReq) ([]*rpc.BlockNumberOrHash, error) {
 	_, ok := b.blockNumberToRegular[req.Method]
 	if ok {
-		if b.blockNumberMethodToCustomHandler[req.Method] != "" {
-			// all the custom handler validations are done before on the init or the constructor
-			method := reflect.ValueOf(customHandlersHolder{}).MethodByName(b.blockNumberMethodToCustomHandler[req.Method])
-			result := method.Call([]reflect.Value{
-				reflect.ValueOf(req),
-			})
-			blockNumbers := result[0].Interface().([]*rpc.BlockNumberOrHash)
-			err, _ := result[1].Interface().(error)
-
-			return blockNumbers, err
+		customHandler, ok := b.blockNumberMethodToCustomHandler[req.Method]
+		if ok {
+			return customHandler(req)
 		}
 
 		var p []interface{}
