@@ -37,9 +37,9 @@ type MethodsConfig struct {
 	Methods []Method `json:"methods"`
 }
 
-var (
-	JSONRPCErrorInternal = -32000
+const JSONRPCErrorInternal = -32000
 
+var (
 	ErrInternalBlockNumberMethodNotMap = &models.RPCErr{
 		Code:          JSONRPCErrorInternal - 23,
 		Message:       "block number response is not a map",
@@ -65,7 +65,8 @@ var (
 	}
 )
 
-// this validates on start if all custom handlers have correct structure
+// this validates on start if all custom handlers have the correct structure
+// reflect was used because it was the easiest form to iterate over the methods of a structure
 func init() {
 	expectedType := reflect.TypeOf(func(customHandlersHolder, *models.RPCReq) ([]*rpc.BlockNumberOrHash, error) { return nil, nil })
 	holderType := reflect.TypeOf(customHandlersHolder{})
@@ -228,7 +229,7 @@ func AddBlockNumberMethodsIfNeeded(rpcReqs []*models.RPCReq, bnMethodsBlockNumbe
 				bH := bn.BlockHash.String()
 				_, ok := idsHolder[bH]
 				if !ok {
-					id, err := generateRandomNumberStringWithRetries(rpcReqs, 12)
+					id, err := generateRandomNumberStringWithRetries(rpcReqs)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -242,7 +243,7 @@ func AddBlockNumberMethodsIfNeeded(rpcReqs []*models.RPCReq, bnMethodsBlockNumbe
 			case rpc.PendingBlockNumber:
 				_, ok := idsHolder["pending"]
 				if !ok {
-					id, err := generateRandomNumberStringWithRetries(rpcReqs, 12)
+					id, err := generateRandomNumberStringWithRetries(rpcReqs)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -252,7 +253,7 @@ func AddBlockNumberMethodsIfNeeded(rpcReqs []*models.RPCReq, bnMethodsBlockNumbe
 			case rpc.EarliestBlockNumber:
 				_, ok := idsHolder["earliest"]
 				if !ok {
-					id, err := generateRandomNumberStringWithRetries(rpcReqs, 12)
+					id, err := generateRandomNumberStringWithRetries(rpcReqs)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -262,7 +263,7 @@ func AddBlockNumberMethodsIfNeeded(rpcReqs []*models.RPCReq, bnMethodsBlockNumbe
 			case rpc.FinalizedBlockNumber:
 				_, ok := idsHolder["finalized"]
 				if !ok {
-					id, err := generateRandomNumberStringWithRetries(rpcReqs, 12)
+					id, err := generateRandomNumberStringWithRetries(rpcReqs)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -272,7 +273,7 @@ func AddBlockNumberMethodsIfNeeded(rpcReqs []*models.RPCReq, bnMethodsBlockNumbe
 			case rpc.SafeBlockNumber:
 				_, ok := idsHolder["safe"]
 				if !ok {
-					id, err := generateRandomNumberStringWithRetries(rpcReqs, 12)
+					id, err := generateRandomNumberStringWithRetries(rpcReqs)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -282,7 +283,7 @@ func AddBlockNumberMethodsIfNeeded(rpcReqs []*models.RPCReq, bnMethodsBlockNumbe
 			case rpc.LatestBlockNumber:
 				_, ok := idsHolder["latest"]
 				if !ok {
-					id, err := generateRandomNumberStringWithRetries(rpcReqs, 12)
+					id, err := generateRandomNumberStringWithRetries(rpcReqs)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -330,7 +331,7 @@ func (b *BlockNumberConv) ChangeBlockNumberMethods(rpcReqs []*models.RPCReq) map
 	return changedMethods
 }
 
-func generateRandomNumberStringWithRetries(rpcReqs []*models.RPCReq, n int) (string, error) {
+func generateRandomNumberStringWithRetries(rpcReqs []*models.RPCReq) (string, error) {
 	retries := 0
 	maxRetries := 5
 	id := ""
@@ -440,7 +441,7 @@ func getBlockNumber(res *models.RPCResJSON, bnHolder map[string]*models.RPCResJS
 	var blocks []string
 	var bnError *models.RPCErr
 	for _, bn := range bns {
-		if bns[0].BlockHash != nil {
+		if bn.BlockHash != nil {
 			bnh := bnHolder[bn.BlockHash.String()]
 			if bnh.Error != nil {
 				bnError = bnh.Error

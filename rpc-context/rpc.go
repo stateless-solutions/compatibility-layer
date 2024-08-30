@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -41,7 +42,7 @@ func (c *RPCContext) parseRPCReq(w http.ResponseWriter, r *http.Request, rh *req
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
-		return errors.New("Failed to read request body")
+		return fmt.Errorf("failed to read request body: %w", err)
 	}
 	defer r.Body.Close()
 
@@ -54,7 +55,7 @@ func (c *RPCContext) parseRPCReq(w http.ResponseWriter, r *http.Request, rh *req
 	if err != nil {
 		if err := json.Unmarshal(body, &rpcReqs); err != nil {
 			http.Error(w, "Invalid request format", http.StatusBadRequest)
-			return errors.New("Invalid request format")
+			return fmt.Errorf("failed to unmarshal request: %w", err)
 		}
 		rh.IsSlice = true
 		rh.RPCReqs = rpcReqs
@@ -91,14 +92,14 @@ func (c *RPCContext) doRPCCall(w http.ResponseWriter, r *http.Request, rh *reqHa
 	modifiedBody, err = json.Marshal(rh.RPCReqs)
 	if err != nil {
 		http.Error(w, "Failed to marshal modified request", http.StatusInternalServerError)
-		return errors.New("Failed to marshal modified request")
+		return fmt.Errorf("failed to marshal modified request: %w", err)
 	}
 
 	// Create a new request to forward to the second server
 	req, err := http.NewRequest("POST", c.ChainURL, bytes.NewBuffer(modifiedBody))
 	if err != nil {
 		http.Error(w, "Failed to create request", http.StatusInternalServerError)
-		return errors.New("Failed to create request")
+		return fmt.Errorf("failed to create request: %w", err)
 	}
 
 	// Copy the original headers
@@ -111,7 +112,7 @@ func (c *RPCContext) doRPCCall(w http.ResponseWriter, r *http.Request, rh *reqHa
 	resp, err := client.Do(req)
 	if err != nil {
 		http.Error(w, "Failed to forward request", http.StatusInternalServerError)
-		return errors.New("Failed to forward request")
+		return fmt.Errorf("failed to forward request: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -124,19 +125,19 @@ func (c *RPCContext) doRPCCall(w http.ResponseWriter, r *http.Request, rh *reqHa
 		gzr, err := gzip.NewReader(resp.Body)
 		if err != nil {
 			http.Error(w, "Failed to create gzip reader", http.StatusInternalServerError)
-			return errors.New("Failed to create gzip reader")
+			return fmt.Errorf("failed to create gzip reader: %w", err)
 		}
 		defer gzr.Close()
 		respBody, err = io.ReadAll(gzr)
 		if err != nil {
 			http.Error(w, "Failed to read gzipped response body", http.StatusInternalServerError)
-			return errors.New("Failed to read gzipped response body")
+			return fmt.Errorf("failed to read gzipped response body: %w", err)
 		}
 	} else {
 		respBody, err = io.ReadAll(resp.Body)
 		if err != nil {
 			http.Error(w, "Failed to read response body", http.StatusInternalServerError)
-			return errors.New("Failed to read response body")
+			return fmt.Errorf("failed to read response body: %w", err)
 		}
 	}
 
@@ -154,18 +155,18 @@ func (c *RPCContext) doRPCCall(w http.ResponseWriter, r *http.Request, rh *reqHa
 			gzw := gzip.NewWriter(&buf)
 			if _, err := gzw.Write(respBody); err != nil {
 				http.Error(w, "Failed to compress response body", http.StatusInternalServerError)
-				return errors.New("Failed to compress response body")
+				return fmt.Errorf("failed to compress response body: %w", err)
 			}
 			if err := gzw.Close(); err != nil {
 				http.Error(w, "Failed to close gzip writer", http.StatusInternalServerError)
-				return errors.New("Failed to close gzip writer")
+				return fmt.Errorf("failed to close gzip writer: %w", err)
 			}
 			w.Write(buf.Bytes())
 		} else {
 			w.Write(respBody)
 		}
 
-		return errors.New("Rsponse was not 200ok")
+		return errors.New("Response was not 200 ok")
 	}
 
 	// Parse the response body
@@ -177,7 +178,7 @@ func (c *RPCContext) doRPCCall(w http.ResponseWriter, r *http.Request, rh *reqHa
 	if err != nil {
 		if err := json.Unmarshal(respBody, &rpcRess); err != nil {
 			http.Error(w, "Invalid response format", http.StatusBadRequest)
-			return errors.New("Invalid response format")
+			return fmt.Errorf("failed to unmarshal response body: %w", err)
 		}
 		rh.RPCRess = rpcRess
 	} else {
@@ -215,7 +216,7 @@ func (c *RPCContext) returnRes(w http.ResponseWriter, rh *reqHandler) error {
 	}
 	if err != nil {
 		http.Error(w, "Failed to marshal modified response", http.StatusInternalServerError)
-		return errors.New("Failed to marshal modified response")
+		return fmt.Errorf("failed to marshal modified response: %w", err)
 	}
 
 	// Copy the headers from the response
@@ -231,11 +232,11 @@ func (c *RPCContext) returnRes(w http.ResponseWriter, rh *reqHandler) error {
 		gzw := gzip.NewWriter(&buf)
 		if _, err := gzw.Write(modifiedRespBody); err != nil {
 			http.Error(w, "Failed to compress response body", http.StatusInternalServerError)
-			return errors.New("Failed to compress response body")
+			return fmt.Errorf("failed to compress response body: %w", err)
 		}
 		if err := gzw.Close(); err != nil {
 			http.Error(w, "Failed to close gzip writer", http.StatusInternalServerError)
-			return errors.New("Failed to close gzip writer")
+			return fmt.Errorf("failed to close gzip writer: %w", err)
 		}
 		w.Header().Set("Content-Length", strconv.Itoa(len(buf.Bytes())))
 		w.Write(buf.Bytes())
