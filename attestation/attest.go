@@ -1,4 +1,4 @@
-package main
+package attestation
 
 import (
 	"crypto/rand"
@@ -7,33 +7,18 @@ import (
 	"encoding/json"
 	"os"
 
+	"github.com/stateless-solutions/stateless-compatibility-layer/models"
 	"golang.org/x/crypto/ssh"
 )
 
-type Attestation struct {
-	SignatureFormat string `json:"signatureFormat,omitempty"`
-	HashAlgo        string `json:"hashAlgo,omitempty"`
-	Identiy         string `json:"identity,omitempty"`
-	MsgHash         string `json:"msg"`
-	Signature       string `json:"signature"`
-}
-
-type RPCResJSONAttested struct {
-	JSONRPC     string          `json:"jsonrpc,omitempty"`
-	ID          json.RawMessage `json:"id,omitempty"`
-	Error       *RPCErr         `json:"error,omitempty"`
-	Result      interface{}     `json:"result,omitempty"`
-	Attestation *Attestation    `json:"attestation,omitempty"`
-}
-
-func newErrorResponse(err *RPCErr, id json.RawMessage) RPCResJSONAttested {
-	return RPCResJSONAttested{
+func newErrorResponse(err *models.RPCErr, id json.RawMessage) models.RPCResJSONAttested {
+	return models.RPCResJSONAttested{
 		JSONRPC: "2.0",
 		Error:   err,
 	}
 }
 
-func AttestableError(jsonErr *RPCErr) ([]byte, error) {
+func AttestableError(jsonErr *models.RPCErr) ([]byte, error) {
 	return json.Marshal(jsonErr)
 }
 
@@ -66,16 +51,16 @@ func GetSigningKeyFromKeyFileWithPassphrase(keyfile string, password string) (ss
 
 }
 
-func Attest(data []byte, identity string, signer ssh.Signer, full bool) (Attestation, error) {
+func Attest(data []byte, identity string, signer ssh.Signer, full bool) (models.Attestation, error) {
 	msgFixed := sha256.Sum256(data)
 	msg := msgFixed[:]
 	sig, err := signer.Sign(rand.Reader, msg)
 	if err != nil {
-		return Attestation{}, err
+		return models.Attestation{}, err
 	}
-	var attestation Attestation
+	var attestation models.Attestation
 	if full {
-		attestation = Attestation{
+		attestation = models.Attestation{
 			SignatureFormat: sig.Format,
 			MsgHash:         hex.EncodeToString(msg),
 			HashAlgo:        "sha256",
@@ -83,7 +68,7 @@ func Attest(data []byte, identity string, signer ssh.Signer, full bool) (Attesta
 			Signature:       hex.EncodeToString(sig.Blob),
 		}
 	} else {
-		attestation = Attestation{
+		attestation = models.Attestation{
 			MsgHash:   hex.EncodeToString(msg),
 			Signature: hex.EncodeToString(sig.Blob),
 		}
@@ -92,7 +77,7 @@ func Attest(data []byte, identity string, signer ssh.Signer, full bool) (Attesta
 	return attestation, nil
 }
 
-func Attestor(input *RPCResJSON, identity string, signer ssh.Signer, full bool) (*RPCResJSONAttested, error) {
+func Attestor(input *models.RPCResJSON, identity string, signer ssh.Signer, full bool) (*models.RPCResJSONAttested, error) {
 	var attestable []byte
 	var err error
 	if input.Result == nil {
@@ -110,7 +95,7 @@ func Attestor(input *RPCResJSON, identity string, signer ssh.Signer, full bool) 
 	if err != nil {
 		return nil, err
 	}
-	attested := &RPCResJSONAttested{
+	attested := &models.RPCResJSONAttested{
 		Result:      input.Result,
 		Error:       input.Error,
 		JSONRPC:     input.JSONRPC,
@@ -120,8 +105,8 @@ func Attestor(input *RPCResJSON, identity string, signer ssh.Signer, full bool) 
 	return attested, nil
 }
 
-func AttestRess(ress []*RPCResJSON, identity string, signer ssh.Signer) ([]*RPCResJSONAttested, error) {
-	var attestedRess []*RPCResJSONAttested
+func AttestRess(ress []*models.RPCResJSON, identity string, signer ssh.Signer) ([]*models.RPCResJSONAttested, error) {
+	var attestedRess []*models.RPCResJSONAttested
 	for i, result := range ress {
 		attested, err := Attestor(result, identity, signer, i == 0)
 		if err != nil {

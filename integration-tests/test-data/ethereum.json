@@ -1,0 +1,40 @@
+{
+    "cases":[
+        {
+            "name": "eth_callAndBlockNumber",
+            "reqBody": {"method":"eth_callAndBlockNumber","params":[{"from": null,"to":"0x6b175474e89094c44da98b954eedeac495271d0f","data":"0x70a082310000000000000000000000006E0d01A76C3Cf4288372a29124A26D4353EE51BE"}, "latest", {"0x1111111111111111111111111111111111111111": {"balance": "0xFFFFFFFFFFFFFFFFFFFF"}}],"id":1,"jsonrpc":"2.0"}
+        },
+        {
+            "name": "eth_getBalanceAndBlockNumber",
+            "reqBody": {"method":"eth_getBalanceAndBlockNumber","params":["0x8D97689C9818892B700e27F316cc3E41e17fBeb9", "latest"],"id":1,"jsonrpc":"2.0"}
+        },
+        {
+            "name": "eth_getStorageAtAndBlockNumber",
+            "reqBody": {"method":"eth_getStorageAtAndBlockNumber","params":["0xE592427A0AEce92De3Edee1F18E0157C05861564", "0x0", "latest"],"id":1,"jsonrpc":"2.0"}
+        },
+        {
+            "name": "eth_getTransactionCountAndBlockNumber",
+            "reqBody": {"method":"eth_getTransactionCountAndBlockNumber","params":["0x8D97689C9818892B700e27F316cc3E41e17fBeb9", "latest"],"id":1,"jsonrpc":"2.0"}
+        },
+        {
+            "name": "eth_getCodeAndBlockNumber",
+            "reqBody": {"method":"eth_getCodeAndBlockNumber","params":["0x5B56438000bAc5ed2c6E0c1EcFF4354aBfFaf889","latest"],"id":1,"jsonrpc":"2.0"}
+        },
+        {
+            "name": "eth_getBlockTransactionCountAndBlockNumberByNumber",
+            "reqBody": {"method":"eth_getBlockTransactionCountAndBlockNumberByNumber","params":["0xc5043f"],"id":1,"jsonrpc":"2.0"}
+        },
+        {
+            "name": "eth_getRawTransactionAndBlockNumberByBlockNumberAndIndex",
+            "reqBody": {"method": "eth_getRawTransactionAndBlockNumberByBlockNumberAndIndex","id": 1,"jsonrpc": "2.0","params": ["0x118593751", "0x0"]}
+        },
+        {
+            "name": "eth_getUncleCountAndBlockNumberByBlockNumber",
+            "reqBody": {"method":"eth_getUncleCountAndBlockNumberByBlockNumber","params":["0xc5043f"],"id":1,"jsonrpc":"2.0"}
+        },
+        {
+            "name": "eth_getLogsAndBlockRange",
+            "reqBody": {"method":"eth_getLogsAndBlockRange","params":[{"address": "0xdAC17F958D2ee523a2206206994597C13D831ec7"}],"id":1,"jsonrpc":"2.0"}
+        }
+    ]
+}
