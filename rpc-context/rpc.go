@@ -19,13 +19,14 @@ import (
 
 type RPCContext struct {
 	Identity        string
-	ChainURL        string
+	DefaultChainURL string
 	HTTPPort        string
 	BlockNumberConv *blocknumber.BlockNumberConv
 	SigningKey      ssh.Signer
 }
 
 type reqHandler struct {
+	ChainURL        string
 	IsSlice         bool
 	IsGzip          bool
 	HTTPResponse    *http.Response
@@ -96,7 +97,7 @@ func (c *RPCContext) doRPCCall(w http.ResponseWriter, r *http.Request, rh *reqHa
 	}
 
 	// Create a new request to forward to the second server
-	req, err := http.NewRequest("POST", c.ChainURL, bytes.NewBuffer(modifiedBody))
+	req, err := http.NewRequest("POST", rh.ChainURL, bytes.NewBuffer(modifiedBody))
 	if err != nil {
 		http.Error(w, "Failed to create request", http.StatusInternalServerError)
 		return fmt.Errorf("failed to create request: %w", err)
@@ -248,10 +249,31 @@ func (c *RPCContext) returnRes(w http.ResponseWriter, rh *reqHandler) error {
 	return nil
 }
 
-func (c *RPCContext) Handler(w http.ResponseWriter, r *http.Request) {
-	rh := &reqHandler{}
+func (c *RPCContext) newReqHandler(w http.ResponseWriter, r *http.Request) (*reqHandler, error) {
+	rh := &reqHandler{
+		ChainURL: c.DefaultChainURL,
+	}
 
-	err := c.parseRPCReq(w, r, rh)
+	headerChainURL := r.Header.Get("Stateless-Chain-URL")
+	if headerChainURL != "" {
+		rh.ChainURL = headerChainURL
+	}
+
+	if rh.ChainURL == "" {
+		http.Error(w, "Chain URL is not set", http.StatusBadRequest)
+		return nil, errors.New("chain URL is not set")
+	}
+
+	return rh, nil
+}
+
+func (c *RPCContext) Handler(w http.ResponseWriter, r *http.Request) {
+	rh, err := c.newReqHandler(w, r)
+	if err != nil {
+		return
+	}
+
+	err = c.parseRPCReq(w, r, rh)
 	if err != nil {
 		return
 	}

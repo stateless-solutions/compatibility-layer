@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	chainURL        = environment.MustGetString("CHAIN_URL")
+	defaultChainURL = environment.MustGetString("DEFAULT_CHAIN_URL")
 	keyFile         = environment.MustGetString("KEY_FILE")
 	keyFilePassword = environment.GetString("KEY_FILE_PASSWORD", "")
 	identity        = environment.MustGetString("IDENTITY")
@@ -40,7 +40,7 @@ func main() {
 	context := &rpccontext.RPCContext{
 		SigningKey:      signer,
 		Identity:        identity,
-		ChainURL:        chainURL,
+		DefaultChainURL: defaultChainURL,
 		HTTPPort:        httpPort,
 		BlockNumberConv: bn,
 	}
