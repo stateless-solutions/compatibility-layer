@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/rpc"
@@ -256,6 +257,12 @@ func (c *RPCContext) newReqHandler(w http.ResponseWriter, r *http.Request) (*req
 
 	headerChainURL := r.Header.Get("Stateless-Chain-URL")
 	if headerChainURL != "" {
+		// Validate the URL
+		_, err := url.ParseRequestURI(headerChainURL)
+		if err != nil {
+			http.Error(w, "Invalid Chain URL", http.StatusBadRequest)
+			return nil, errors.New("invalid chain URL")
+		}
 		rh.ChainURL = headerChainURL
 	}
 
