@@ -111,7 +111,7 @@ func TestIntegration(t *testing.T) {
 			context := &rpccontext.RPCContext{
 				SigningKey:      signer,
 				Identity:        identity,
-				ChainURL:        urlFlag,
+				DefaultChainURL: urlFlag,
 				BlockNumberConv: bn,
 			}
 
