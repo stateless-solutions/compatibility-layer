@@ -1,0 +1,12 @@
+{
+    "cases":[
+        {
+            "name": "erigon_getLogsAndBlockRange",
+            "reqBody": {"method":"erigon_getLogsAndBlockRange","params":[{"address": "0xF116664E5Ec06681DdD6a56bF32Bf99E52480D68"}],"id":1,"jsonrpc":"2.0"}
+        },
+        {
+            "name": "erigon_getLatestLogsAndBlockRange",
+            "reqBody": {"method":"erigon_getLatestLogsAndBlockRange","params":[{"address": "0xF116664E5Ec06681DdD6a56bF32Bf99E52480D68"},{"logCount": 1}],"id":1,"jsonrpc":"2.0"}
+        }
+    ]
+}

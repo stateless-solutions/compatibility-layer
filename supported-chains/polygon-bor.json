@@ -1,0 +1,44 @@
+{
+    "methods": [
+      {
+        "blockNumberMethod": "bor_getSnapshotAndBlockNumber",
+        "originalMethod": "bor_getSnapshot",
+        "positionsBlockNumberParam": [0],
+        "isBlockRange": false
+      },
+      {
+        "blockNumberMethod": "bor_getAuthorAndBlockNumber",
+        "originalMethod": "bor_getAuthor",
+        "positionsBlockNumberParam": [0],
+        "isBlockRange": false
+      },
+      {
+        "blockNumberMethod": "bor_getSignersAndBlockNumber",
+        "originalMethod": "bor_getSigners",
+        "positionsBlockNumberParam": [0],
+        "isBlockRange": false
+      },
+      {
+        "blockNumberMethod": "bor_getCurrentProposerAndBlockNumber",
+        "originalMethod": "bor_getCurrentProposer",
+        "isBlockRange": false
+      },
+      {
+        "blockNumberMethod": "bor_getCurrentValidatorsAndBlockNumber",
+        "originalMethod": "bor_getCurrentValidators",
+        "isBlockRange": false
+      },
+      {
+        "blockNumberMethod": "bor_getSnapshotProposerAndBlockNumber",
+        "originalMethod": "bor_getSnapshotProposer",
+        "positionsBlockNumberParam": [0],
+        "isBlockRange": false
+      },
+      {
+        "blockNumberMethod": "bor_getSnapshotProposerSequenceAndBlockNumber",
+        "originalMethod": "bor_getSnapshotProposerSequence",
+        "positionsBlockNumberParam": [0],
+        "isBlockRange": false
+      }
+    ]
+}

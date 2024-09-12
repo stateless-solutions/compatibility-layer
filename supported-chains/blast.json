@@ -1,0 +1,10 @@
+{
+    "methods": [
+      {
+        "blockNumberMethod": "eth_getBalanceValuesAndBlockNumber",
+        "originalMethod": "eth_getBalanceValues",
+        "positionsBlockNumberParam": [1],
+        "isBlockRange": false
+      }
+    ]
+}

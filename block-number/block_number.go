@@ -171,6 +171,18 @@ func (b *BlockNumberConv) getBlockNumbers(req *models.RPCReq) ([]*rpc.BlockNumbe
 			return nil, err
 		}
 
+		// in case no param position or params are empty
+		// default block tags are used: latest for non range and earliest to latest in range
+		if len(b.blockNumberMethodToPos[req.Method]) == 0 || len(p) == 0 {
+			bnl, _ := remarshalBlockNumberOrHash("latest")
+			bne, _ := remarshalBlockNumberOrHash("earliest")
+			if b.blockNumberMethodToIsBlockRange[req.Method] {
+				return []*rpc.BlockNumberOrHash{bne, bnl}, nil
+			} else {
+				return []*rpc.BlockNumberOrHash{bnl}, nil
+			}
+		}
+
 		var bns []*rpc.BlockNumberOrHash
 		for _, pos := range b.blockNumberMethodToPos[req.Method] {
 			if len(p) <= pos {

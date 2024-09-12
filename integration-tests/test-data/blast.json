@@ -1,0 +1,8 @@
+{
+    "cases":[
+        {
+            "name": "eth_getBalanceValuesAndBlockNumber",
+            "reqBody": {"jsonrpc":"2.0","method":"eth_getBalanceValuesAndBlockNumber","id":1,"params":["0x9C7d2aedcBFEF19c31BF41330C524387aad7566D", "latest"]}
+        }
+    ]
+}
