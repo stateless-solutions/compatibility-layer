@@ -1,0 +1,32 @@
+{
+    "cases":[
+        {
+            "name": "bor_getSnapshotAndBlockNumber",
+            "reqBody": {"jsonrpc":"2.0","method": "bor_getSnapshotAndBlockNumber","id":1}
+        },
+        {
+            "name": "bor_getAuthorAndBlockNumber",
+            "reqBody": {"jsonrpc":"2.0","method": "bor_getAuthorAndBlockNumber","id":1}
+        },
+        {
+            "name": "bor_getSignersAndBlockNumber",
+            "reqBody": {"jsonrpc":"2.0","method": "bor_getSignersAndBlockNumber","id":1}
+        },
+        {
+            "name": "bor_getCurrentProposerAndBlockNumber",
+            "reqBody": {"jsonrpc":"2.0","method": "bor_getCurrentProposerAndBlockNumber","id":1}
+        },
+        {
+            "name": "bor_getCurrentValidatorsAndBlockNumber",
+            "reqBody": {"jsonrpc":"2.0","method": "bor_getCurrentValidatorsAndBlockNumber","id":1}
+        },
+        {
+            "name": "bor_getSnapshotProposerAndBlockNumber",
+            "reqBody": {"jsonrpc":"2.0","method": "bor_getSnapshotProposerAndBlockNumber","id":1}
+        },
+        {
+            "name": "bor_getSnapshotProposerSequenceAndBlockNumber",
+            "reqBody": {"jsonrpc":"2.0","method": "bor_getSnapshotProposerSequenceAndBlockNumber","id":1}
+        }
+    ]
+}

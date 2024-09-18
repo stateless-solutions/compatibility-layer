@@ -1,0 +1,16 @@
+{
+    "methods": [
+      {
+        "blockNumberMethod": "erigon_getLogsAndBlockRange",
+        "originalMethod": "erigon_getLogs",
+        "customHandler": "HandleGetLogsAndBlockRange",
+        "isBlockRange": true
+      },
+      {
+        "blockNumberMethod": "erigon_getLatestLogsAndBlockRange",
+        "originalMethod": "erigon_getLatestLogs",
+        "customHandler": "HandleGetLogsAndBlockRange",
+        "isBlockRange": true
+      }
+    ]
+}
