@@ -18,11 +18,11 @@ func newErrorResponse(err *models.RPCErr, id json.RawMessage) models.RPCResJSONA
 	}
 }
 
-func AttestableError(jsonErr *models.RPCErr) ([]byte, error) {
+func attestableError(jsonErr *models.RPCErr) ([]byte, error) {
 	return json.Marshal(jsonErr)
 }
 
-func AttestableJSON(result interface{}) ([]byte, error) {
+func attestableJSON(result interface{}) ([]byte, error) {
 	return json.Marshal(result)
 }
 
@@ -51,7 +51,7 @@ func GetSigningKeyFromKeyFileWithPassphrase(keyfile string, password string) (ss
 
 }
 
-func Attest(data []byte, identity string, signer ssh.Signer, full bool) (models.Attestation, error) {
+func attest(data []byte, identity string, signer ssh.Signer, full bool) (models.Attestation, error) {
 	msgFixed := sha256.Sum256(data)
 	msg := msgFixed[:]
 	sig, err := signer.Sign(rand.Reader, msg)
@@ -77,21 +77,21 @@ func Attest(data []byte, identity string, signer ssh.Signer, full bool) (models.
 	return attestation, nil
 }
 
-func Attestor(input *models.RPCResJSON, identity string, signer ssh.Signer, full bool) (*models.RPCResJSONAttested, error) {
+func attestor(input *models.RPCResJSON, identity string, signer ssh.Signer, full bool) (*models.RPCResJSONAttested, error) {
 	var attestable []byte
 	var err error
 	if input.Result == nil {
-		attestable, err = AttestableError(input.Error)
+		attestable, err = attestableError(input.Error)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		attestable, err = AttestableJSON(input.Result)
+		attestable, err = attestableJSON(input.Result)
 		if err != nil {
 			return nil, err
 		}
 	}
-	attestation, err := Attest(attestable, identity, signer, full)
+	attestation, err := attest(attestable, identity, signer, full)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func Attestor(input *models.RPCResJSON, identity string, signer ssh.Signer, full
 func AttestRess(ress []*models.RPCResJSON, identity string, signer ssh.Signer) ([]*models.RPCResJSONAttested, error) {
 	var attestedRess []*models.RPCResJSONAttested
 	for i, result := range ress {
-		attested, err := Attestor(result, identity, signer, i == 0)
+		attested, err := attestor(result, identity, signer, i == 0)
 		if err != nil {
 			return nil, err
 		}
