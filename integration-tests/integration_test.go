@@ -36,7 +36,7 @@ type IntegrationTestConfig struct {
 func init() {
 	flag.StringVar(&urlFlag, "url", "", "The URL of the server to test against")
 	flag.BoolVar(&integration, "integration", false, "Bool to run the integration tests")
-	flag.StringVar(&keyFile, "keyfile", "", "Path of key file for attestions")
+	flag.StringVar(&keyFile, "keyfile", "", "Path of key file for attestations")
 	flag.StringVar(&configFileTest, "configFile", "", "Path of config file")
 	flag.StringVar(&integrationTestFile, "integrationFile", "", "Path of integration tests config file")
 	flag.Int64Var(&waitTime, "waitTime", 0, "Wait time in between reqs in miliseconds")

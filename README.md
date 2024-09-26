@@ -30,7 +30,7 @@ Before you begin, ensure you have the following installed on your system:
 
     ```ini
     DEFAULT_CHAIN_URL=http://your-chain.co
-    USE_ATTESTION=true
+    USE_ATTESTATION=true
     KEY_FILE=/path/to/your/.key.pem
     KEY_FILE_PASSWORD=
     IDENTITY=identity

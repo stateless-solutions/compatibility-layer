@@ -23,7 +23,7 @@ type RPCContext struct {
 	DefaultChainURL string
 	HTTPPort        string
 	BlockNumberConv *blocknumber.BlockNumberConv
-	UseAttestion    bool
+	UseAttestation  bool
 	SigningKey      ssh.Signer
 }
 
@@ -199,7 +199,7 @@ func (c *RPCContext) modifyRes(w http.ResponseWriter, rh *reqHandler) error {
 		return err
 	}
 
-	if c.UseAttestion {
+	if c.UseAttestation {
 		rh.RPCRessAttested, err = attestation.AttestRess(rh.RPCRess, c.Identity, c.SigningKey)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -213,7 +213,7 @@ func (c *RPCContext) modifyRes(w http.ResponseWriter, rh *reqHandler) error {
 func (c *RPCContext) marshalBody(rh *reqHandler) ([]byte, error) {
 	var modifiedRespBody []byte
 	var err error
-	if c.UseAttestion {
+	if c.UseAttestation {
 		if rh.IsSlice {
 			modifiedRespBody, err = json.Marshal(rh.RPCRessAttested)
 		} else {
@@ -289,6 +289,32 @@ func (c *RPCContext) newReqHandler(w http.ResponseWriter, r *http.Request) (*req
 	}
 
 	return rh, nil
+}
+
+func (c *RPCContext) EnableAttestation(keyFile, keyFilePassword, identity string) {
+	if keyFile == "" {
+		panic("KEY_FILE env must be set if USE_ATTESTATION is true")
+	}
+	if identity == "" {
+		panic("IDENTITY env must be set if USE_ATTESTATION is true")
+	}
+
+	var signer ssh.Signer
+	var err error
+	if keyFilePassword != "" {
+		signer, err = attestation.GetSigningKeyFromKeyFileWithPassphrase(keyFile, keyFilePassword)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		signer, err = attestation.GetSigningKeyFromKeyFile(keyFile)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	c.SigningKey = signer
+	c.UseAttestation = true
 }
 
 func (c *RPCContext) Handler(w http.ResponseWriter, r *http.Request) {

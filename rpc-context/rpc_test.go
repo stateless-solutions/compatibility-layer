@@ -7,7 +7,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/stateless-solutions/stateless-compatibility-layer/attestation"
 	blocknumber "github.com/stateless-solutions/stateless-compatibility-layer/block-number"
 )
 
@@ -116,19 +115,15 @@ func TestAttestorHandler(t *testing.T) {
 			// Mock response recorder
 			rec := httptest.NewRecorder()
 
-			// var signer ssh.Signer
-			signer, err := attestation.GetSigningKeyFromKeyFile(tt.keyFile)
-			if err != nil {
-				panic(err)
-			}
-
 			bn := blocknumber.NewBlockNumberConv("../supported-chains/ethereum.json")
 
 			context := &RPCContext{
-				SigningKey:      signer,
 				Identity:        identity,
 				BlockNumberConv: bn,
-				UseAttestion:    tt.useAttestation,
+			}
+
+			if tt.useAttestation {
+				context.EnableAttestation(tt.keyFile, "", identity)
 			}
 
 			if tt.setChainURLInHeader {
