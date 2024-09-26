@@ -23,6 +23,7 @@ type RPCContext struct {
 	DefaultChainURL string
 	HTTPPort        string
 	BlockNumberConv *blocknumber.BlockNumberConv
+	UseAttestion    bool
 	SigningKey      ssh.Signer
 }
 
@@ -198,24 +199,40 @@ func (c *RPCContext) modifyRes(w http.ResponseWriter, rh *reqHandler) error {
 		return err
 	}
 
-	rh.RPCRessAttested, err = attestation.AttestRess(rh.RPCRess, c.Identity, c.SigningKey)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+	if c.UseAttestion {
+		rh.RPCRessAttested, err = attestation.AttestRess(rh.RPCRess, c.Identity, c.SigningKey)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (c *RPCContext) returnRes(w http.ResponseWriter, rh *reqHandler) error {
-	// Marshal the modified response body
+func (c *RPCContext) marshalBody(rh *reqHandler) ([]byte, error) {
 	var modifiedRespBody []byte
 	var err error
-	if rh.IsSlice {
-		modifiedRespBody, err = json.Marshal(rh.RPCRessAttested)
+	if c.UseAttestion {
+		if rh.IsSlice {
+			modifiedRespBody, err = json.Marshal(rh.RPCRessAttested)
+		} else {
+			modifiedRespBody, err = json.Marshal(rh.RPCRessAttested[0])
+		}
 	} else {
-		modifiedRespBody, err = json.Marshal(rh.RPCRessAttested[0])
+		if rh.IsSlice {
+			modifiedRespBody, err = json.Marshal(rh.RPCRess)
+		} else {
+			modifiedRespBody, err = json.Marshal(rh.RPCRess[0])
+		}
 	}
+
+	return modifiedRespBody, err
+}
+
+func (c *RPCContext) returnRes(w http.ResponseWriter, rh *reqHandler) error {
+	// Marshal the modified response body
+	modifiedRespBody, err := c.marshalBody(rh)
 	if err != nil {
 		http.Error(w, "Failed to marshal modified response", http.StatusInternalServerError)
 		return fmt.Errorf("failed to marshal modified response: %w", err)

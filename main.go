@@ -12,37 +12,49 @@ import (
 )
 
 var (
-	defaultChainURL = environment.MustGetString("DEFAULT_CHAIN_URL")
-	keyFile         = environment.MustGetString("KEY_FILE")
+	defaultChainURL = environment.GetString("DEFAULT_CHAIN_URL", "")
+	useAttestation  = environment.GetBool("USE_ATTESTION", false)
+	keyFile         = environment.GetString("KEY_FILE", "")
 	keyFilePassword = environment.GetString("KEY_FILE_PASSWORD", "")
-	identity        = environment.MustGetString("IDENTITY")
+	identity        = environment.GetString("IDENTITY", "")
 	httpPort        = environment.GetString("HTTP_PORT", "8080")
 	configFiles     = environment.GetString("CONFIG_FILES", "supported-chains/ethereum.json")
 )
 
 func main() {
-	var signer ssh.Signer
-	var err error
-	if keyFilePassword != "" {
-		signer, err = attestation.GetSigningKeyFromKeyFileWithPassphrase(keyFile, keyFilePassword)
-		if err != nil {
-			panic(err)
-		}
-	} else {
-		signer, err = attestation.GetSigningKeyFromKeyFile(keyFile)
-		if err != nil {
-			panic(err)
-		}
-	}
-
 	bn := blocknumber.NewBlockNumberConv(configFiles)
 
 	context := &rpccontext.RPCContext{
-		SigningKey:      signer,
 		Identity:        identity,
 		DefaultChainURL: defaultChainURL,
 		HTTPPort:        httpPort,
 		BlockNumberConv: bn,
+	}
+
+	if useAttestation {
+		if keyFile == "" {
+			panic("KEY_FILE env must be set if USE_ATTESTION is true")
+		}
+		if identity == "" {
+			panic("IDENTITY env must be set if USE_ATTESTION is true")
+		}
+
+		var signer ssh.Signer
+		var err error
+		if keyFilePassword != "" {
+			signer, err = attestation.GetSigningKeyFromKeyFileWithPassphrase(keyFile, keyFilePassword)
+			if err != nil {
+				panic(err)
+			}
+		} else {
+			signer, err = attestation.GetSigningKeyFromKeyFile(keyFile)
+			if err != nil {
+				panic(err)
+			}
+		}
+
+		context.SigningKey = signer
+		context.UseAttestion = true
 	}
 
 	// Start the server on the specified port
