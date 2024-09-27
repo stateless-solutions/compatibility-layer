@@ -30,6 +30,7 @@ Before you begin, ensure you have the following installed on your system:
 
     ```ini
     DEFAULT_CHAIN_URL=http://your-chain.co
+    USE_ATTESTATION=true
     KEY_FILE=/path/to/your/.key.pem
     KEY_FILE_PASSWORD=
     IDENTITY=identity
@@ -134,7 +135,8 @@ docker rm comp-layer
 - Ensure the `DEFAULT_CHAIN_URL`, `KEY_FILE`, `KEY_FILE_PASSWORD`, `IDENTITY`, `CONFIG_FILES` and `HTTP_PORT` environment variables are correctly set in your `.env` file.
 - The `CONFIG_FILES` env var supports multiple files, just input them separated by a `,` with no spaces.
 - The port specified in the `HTTP_PORT` environment variable should match the port mapping in the Docker run command.
-- The chain URL used for a request can be specified in a header called `Stateless-Chain-URL`. If this header is present in a request, its value will take precedence over any URL set in the environment variable..
+- The chain URL used for a request can be specified in a header called `Stateless-Chain-URL`. If this header is present in a request, its value will take precedence over any URL set in the environment variable.
+- If the `USE_ATTESTATION` is set to true, the `KEY_FILE` and `IDENTITY` env vars are mandatory for the attestations to work.
 
 ## Troubleshooting
 
