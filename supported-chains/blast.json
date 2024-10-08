@@ -1,10 +1,11 @@
 {
+  "chainType": "evm",
     "methods": [
       {
-        "blockNumberMethod": "eth_getBalanceValuesAndBlockNumber",
+        "customMethod": "eth_getBalanceValuesAndBlockNumber",
         "originalMethod": "eth_getBalanceValues",
-        "positionsBlockNumberParam": [1],
-        "isBlockRange": false
+        "positionsGetterParam": [1],
+        "isRange": false
       }
     ]
 }

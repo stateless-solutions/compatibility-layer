@@ -1,4 +1,4 @@
-package blocknumber
+package customrpcmethods
 
 import (
 	"encoding/json"
@@ -600,20 +600,20 @@ func TestBlockNumber(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			b := NewBlockNumberConv("../supported-chains/ethereum.json")
+			ch := NewCustomMethodHolder("../supported-chains/ethereum.json")
 
-			blockMap, err := b.GetBlockNumberMap(tt.req)
+			blockMap, err := ch.GetCustomMethodsMap(tt.req)
 			if err != nil {
 				t.Fatalf("Test case %s: Error not expected, got %v", tt.name, err)
 			}
-			changedMethods := b.ChangeBlockNumberMethods(tt.req)
+			changedMethods, _ := ch.ChangeCustomMethods(tt.req)
 
 			if tt.req[0].Method != tt.expectedReq.Method {
 				t.Errorf("Test case %s: Expected method %s, got %s", tt.name, tt.expectedReq.Method, tt.req[0].Method)
 			}
 
 			var idsHolder map[string]string
-			tt.req, idsHolder, _ = AddBlockNumberMethodsIfNeeded(tt.req, blockMap)
+			tt.req, idsHolder, _ = ch.AddGetterMethodsIfNeeded(tt.req, blockMap)
 
 			if tt.idsToRewrite != nil && tt.contentsToRewrite != nil {
 				for i := 0; i < len(tt.idsToRewrite); i++ {
@@ -625,7 +625,7 @@ func TestBlockNumber(t *testing.T) {
 				t.Errorf("Test case %s: Expected req length %d, got %d", tt.name, tt.expectedReqLength, len(tt.req))
 			}
 
-			ress, err := b.ChangeBlockNumberResponses(tt.res, changedMethods, idsHolder, blockMap)
+			ress, err := ch.ChangeCustomMethodsResponses(tt.res, changedMethods, idsHolder, blockMap)
 			if err != tt.expectedErr {
 				t.Fatalf("Test case %s: Expected error %v, got %v", tt.name, tt.expectedErr, err)
 			}

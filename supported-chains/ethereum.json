@@ -1,58 +1,59 @@
 {
+  "chainType": "evm",
   "methods": [
     {
-      "blockNumberMethod": "eth_callAndBlockNumber",
+      "customMethod": "eth_callAndBlockNumber",
       "originalMethod": "eth_call",
-      "positionsBlockNumberParam": [1],
-      "isBlockRange": false
+      "positionsGetterParam": [1],
+      "isRange": false
     },
     {
-      "blockNumberMethod": "eth_getBalanceAndBlockNumber",
+      "customMethod": "eth_getBalanceAndBlockNumber",
       "originalMethod": "eth_getBalance",
-      "positionsBlockNumberParam": [1],
-      "isBlockRange": false
+      "positionsGetterParam": [1],
+      "isRange": false
     },
     {
-      "blockNumberMethod": "eth_getStorageAtAndBlockNumber",
+      "customMethod": "eth_getStorageAtAndBlockNumber",
       "originalMethod": "eth_getStorageAt",
-      "positionsBlockNumberParam": [2],
-      "isBlockRange": false
+      "positionsGetterParam": [2],
+      "isRange": false
     },
     {
-      "blockNumberMethod": "eth_getTransactionCountAndBlockNumber",
+      "customMethod": "eth_getTransactionCountAndBlockNumber",
       "originalMethod": "eth_getTransactionCount",
-      "positionsBlockNumberParam": [1],
-      "isBlockRange": false
+      "positionsGetterParam": [1],
+      "isRange": false
     },
     {
-      "blockNumberMethod": "eth_getCodeAndBlockNumber",
+      "customMethod": "eth_getCodeAndBlockNumber",
       "originalMethod": "eth_getCode",
-      "positionsBlockNumberParam": [1],
-      "isBlockRange": false
+      "positionsGetterParam": [1],
+      "isRange": false
     },
     {
-      "blockNumberMethod": "eth_getBlockTransactionCountAndBlockNumberByNumber",
+      "customMethod": "eth_getBlockTransactionCountAndBlockNumberByNumber",
       "originalMethod": "eth_getBlockTransactionCountByNumber",
-      "positionsBlockNumberParam": [0],
-      "isBlockRange": false
+      "positionsGetterParam": [0],
+      "isRange": false
     },
     {
-      "blockNumberMethod": "eth_getRawTransactionAndBlockNumberByBlockNumberAndIndex",
+      "customMethod": "eth_getRawTransactionAndBlockNumberByBlockNumberAndIndex",
       "originalMethod": "eth_getRawTransactionByBlockNumberAndIndex",
-      "positionsBlockNumberParam": [0],
-      "isBlockRange": false
+      "positionsGetterParam": [0],
+      "isRange": false
     },
     {
-      "blockNumberMethod": "eth_getUncleCountAndBlockNumberByBlockNumber",
+      "customMethod": "eth_getUncleCountAndBlockNumberByBlockNumber",
       "originalMethod": "eth_getUncleCountByBlockNumber",
-      "positionsBlockNumberParam": [0],
-      "isBlockRange": false
+      "positionsGetterParam": [0],
+      "isRange": false
     },
     {
-      "blockNumberMethod": "eth_getLogsAndBlockRange",
+      "customMethod": "eth_getLogsAndBlockRange",
       "originalMethod": "eth_getLogs",
       "customHandler": "HandleGetLogsAndBlockRange",
-      "isBlockRange": true
+      "isRange": true
     }
   ]
 }

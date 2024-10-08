@@ -1,4 +1,4 @@
-package blocknumber
+package customrpcmethods
 
 import (
 	"encoding/json"
@@ -7,9 +7,9 @@ import (
 	"github.com/stateless-solutions/stateless-compatibility-layer/models"
 )
 
-type customHandlersHolder struct{}
+type evmCustomHandlersHolder struct{}
 
-func (customHandlersHolder) HandleGetLogsAndBlockRange(req *models.RPCReq) ([]*rpc.BlockNumberOrHash, error) {
+func (evmCustomHandlersHolder) HandleGetLogsAndBlockRange(req *models.RPCReq) ([]*rpc.BlockNumberOrHash, error) {
 	pos := 0
 
 	var p []map[string]interface{}

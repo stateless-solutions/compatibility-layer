@@ -13,18 +13,18 @@ import (
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stateless-solutions/stateless-compatibility-layer/attestation"
-	blocknumber "github.com/stateless-solutions/stateless-compatibility-layer/block-number"
+	customrpcmethods "github.com/stateless-solutions/stateless-compatibility-layer/custom-rpc-methods"
 	"github.com/stateless-solutions/stateless-compatibility-layer/models"
 	"golang.org/x/crypto/ssh"
 )
 
 type RPCContext struct {
-	Identity        string
-	DefaultChainURL string
-	HTTPPort        string
-	BlockNumberConv *blocknumber.BlockNumberConv
-	UseAttestation  bool
-	SigningKey      ssh.Signer
+	Identity           string
+	DefaultChainURL    string
+	HTTPPort           string
+	CustomMethodHolder *customrpcmethods.CustomMethodHolder
+	UseAttestation     bool
+	SigningKey         ssh.Signer
 }
 
 type reqHandler struct {
@@ -71,15 +71,19 @@ func (c *RPCContext) parseRPCReq(w http.ResponseWriter, r *http.Request, rh *req
 }
 
 func (c *RPCContext) modifyReq(w http.ResponseWriter, rh *reqHandler) error {
-	blockMap, err := c.BlockNumberConv.GetBlockNumberMap(rh.RPCReqs)
+	blockMap, err := c.CustomMethodHolder.GetCustomMethodsMap(rh.RPCReqs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	rh.BlockMap = blockMap
-	rh.ChangedMethods = c.BlockNumberConv.ChangeBlockNumberMethods(rh.RPCReqs)
+	rh.ChangedMethods, err = c.CustomMethodHolder.ChangeCustomMethods(rh.RPCReqs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return err
+	}
 
-	rh.RPCReqs, rh.IDsHolder, err = blocknumber.AddBlockNumberMethodsIfNeeded(rh.RPCReqs, blockMap)
+	rh.RPCReqs, rh.IDsHolder, err = c.CustomMethodHolder.AddGetterMethodsIfNeeded(rh.RPCReqs, blockMap)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
@@ -193,7 +197,7 @@ func (c *RPCContext) doRPCCall(w http.ResponseWriter, r *http.Request, rh *reqHa
 
 func (c *RPCContext) modifyRes(w http.ResponseWriter, rh *reqHandler) error {
 	var err error
-	rh.RPCRess, err = c.BlockNumberConv.ChangeBlockNumberResponses(rh.RPCRess, rh.ChangedMethods, rh.IDsHolder, rh.BlockMap)
+	rh.RPCRess, err = c.CustomMethodHolder.ChangeCustomMethodsResponses(rh.RPCRess, rh.ChangedMethods, rh.IDsHolder, rh.BlockMap)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
