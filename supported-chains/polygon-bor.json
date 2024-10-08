@@ -1,44 +1,45 @@
 {
+  "chainType": "evm",
     "methods": [
       {
-        "blockNumberMethod": "bor_getSnapshotAndBlockNumber",
+        "customMethod": "bor_getSnapshotAndBlockNumber",
         "originalMethod": "bor_getSnapshot",
-        "positionsBlockNumberParam": [0],
-        "isBlockRange": false
+        "positionsGetterParam": [0],
+        "isRange": false
       },
       {
-        "blockNumberMethod": "bor_getAuthorAndBlockNumber",
+        "customMethod": "bor_getAuthorAndBlockNumber",
         "originalMethod": "bor_getAuthor",
-        "positionsBlockNumberParam": [0],
-        "isBlockRange": false
+        "positionsGetterParam": [0],
+        "isRange": false
       },
       {
-        "blockNumberMethod": "bor_getSignersAndBlockNumber",
+        "customMethod": "bor_getSignersAndBlockNumber",
         "originalMethod": "bor_getSigners",
-        "positionsBlockNumberParam": [0],
-        "isBlockRange": false
+        "positionsGetterParam": [0],
+        "isRange": false
       },
       {
-        "blockNumberMethod": "bor_getCurrentProposerAndBlockNumber",
+        "customMethod": "bor_getCurrentProposerAndBlockNumber",
         "originalMethod": "bor_getCurrentProposer",
-        "isBlockRange": false
+        "isRange": false
       },
       {
-        "blockNumberMethod": "bor_getCurrentValidatorsAndBlockNumber",
+        "customMethod": "bor_getCurrentValidatorsAndBlockNumber",
         "originalMethod": "bor_getCurrentValidators",
-        "isBlockRange": false
+        "isRange": false
       },
       {
-        "blockNumberMethod": "bor_getSnapshotProposerAndBlockNumber",
+        "customMethod": "bor_getSnapshotProposerAndBlockNumber",
         "originalMethod": "bor_getSnapshotProposer",
-        "positionsBlockNumberParam": [0],
-        "isBlockRange": false
+        "positionsGetterParam": [0],
+        "isRange": false
       },
       {
-        "blockNumberMethod": "bor_getSnapshotProposerSequenceAndBlockNumber",
+        "customMethod": "bor_getSnapshotProposerSequenceAndBlockNumber",
         "originalMethod": "bor_getSnapshotProposerSequence",
-        "positionsBlockNumberParam": [0],
-        "isBlockRange": false
+        "positionsGetterParam": [0],
+        "isRange": false
       }
     ]
 }

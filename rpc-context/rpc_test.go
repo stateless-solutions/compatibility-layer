@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	blocknumber "github.com/stateless-solutions/stateless-compatibility-layer/block-number"
+	customrpcmethods "github.com/stateless-solutions/stateless-compatibility-layer/custom-rpc-methods"
 )
 
 func TestAttestorHandler(t *testing.T) {
@@ -115,11 +115,11 @@ func TestAttestorHandler(t *testing.T) {
 			// Mock response recorder
 			rec := httptest.NewRecorder()
 
-			bn := blocknumber.NewBlockNumberConv("../supported-chains/ethereum.json")
+			ch := customrpcmethods.NewCustomMethodHolder("../supported-chains/ethereum.json")
 
 			context := &RPCContext{
-				Identity:        identity,
-				BlockNumberConv: bn,
+				Identity:           identity,
+				CustomMethodHolder: ch,
 			}
 
 			if tt.useAttestation {

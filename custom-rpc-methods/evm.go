@@ -1,4 +1,4 @@
-package blocknumber
+package customrpcmethods
 
 import (
 	"crypto/rand"
@@ -6,9 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"os"
 	"reflect"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stateless-solutions/stateless-compatibility-layer/models"
@@ -23,18 +21,6 @@ type blockRangeResult struct {
 	Data          interface{} `json:"data"`
 	StartingBlock string      `json:"startingBlock"`
 	EndingBlock   string      `json:"endingBlock"`
-}
-
-type Method struct {
-	OriginalMethod            string `json:"originalMethod"`
-	BlockNumberMethod         string `json:"blockNumberMethod"`
-	PositionsBlockNumberParam []int  `json:"positionsBlockNumberParam,omitempty"`
-	CustomHandler             string `json:"customHandler,omitempty"`
-	IsBlockRange              bool   `json:"isBlockRange"`
-}
-
-type MethodsConfig struct {
-	Methods []Method `json:"methods"`
 }
 
 const JSONRPCErrorInternal = -32000
@@ -68,8 +54,8 @@ var (
 // this validates on start if all custom handlers have the correct structure
 // reflect was used because it was the easiest form to iterate over the methods of a structure
 func init() {
-	expectedType := reflect.TypeOf(func(customHandlersHolder, *models.RPCReq) ([]*rpc.BlockNumberOrHash, error) { return nil, nil })
-	holderType := reflect.TypeOf(customHandlersHolder{})
+	expectedType := reflect.TypeOf(func(evmCustomHandlersHolder, *models.RPCReq) ([]*rpc.BlockNumberOrHash, error) { return nil, nil })
+	holderType := reflect.TypeOf(evmCustomHandlersHolder{})
 
 	for i := 0; i < holderType.NumMethod(); i++ {
 		method := holderType.Method(i)
@@ -81,47 +67,33 @@ func init() {
 }
 
 type BlockNumberConv struct {
-	configfile                       string
 	blockNumberToRegular             map[string]string
 	blockNumberMethodToPos           map[string][]int
 	blockNumberMethodToIsBlockRange  map[string]bool
 	blockNumberMethodToCustomHandler map[string]func(*models.RPCReq) ([]*rpc.BlockNumberOrHash, error)
 }
 
-func NewBlockNumberConv(configFiles string) *BlockNumberConv {
+func NewBlockNumberConv(configs []MethodsConfig) *BlockNumberConv {
 	bnc := &BlockNumberConv{
-		configfile:                       configFiles,
 		blockNumberToRegular:             map[string]string{},
 		blockNumberMethodToPos:           map[string][]int{},
 		blockNumberMethodToIsBlockRange:  map[string]bool{},
 		blockNumberMethodToCustomHandler: map[string]func(*models.RPCReq) ([]*rpc.BlockNumberOrHash, error){},
 	}
 
-	files := strings.Split(configFiles, ",")
-	for _, file := range files {
-		byteValue, err := os.ReadFile(file)
-		if err != nil {
-			panic(err)
-		}
-
-		var config MethodsConfig
-		err = json.Unmarshal(byteValue, &config)
-		if err != nil {
-			panic(err)
-		}
-
+	for _, config := range configs {
 		for _, method := range config.Methods {
-			bnc.blockNumberToRegular[method.BlockNumberMethod] = method.OriginalMethod
-			bnc.blockNumberMethodToPos[method.BlockNumberMethod] = method.PositionsBlockNumberParam
-			bnc.blockNumberMethodToIsBlockRange[method.BlockNumberMethod] = method.IsBlockRange
+			bnc.blockNumberToRegular[method.CustomMethod] = method.OriginalMethod
+			bnc.blockNumberMethodToPos[method.CustomMethod] = method.PositionsGetterParam
+			bnc.blockNumberMethodToIsBlockRange[method.CustomMethod] = method.IsRange
 			if method.CustomHandler != "" {
-				handler := reflect.ValueOf(customHandlersHolder{}).MethodByName(method.CustomHandler)
+				handler := reflect.ValueOf(evmCustomHandlersHolder{}).MethodByName(method.CustomHandler)
 				if !handler.IsValid() {
-					panic(fmt.Sprintf("custom handler %s for method %s is not implemented", method.CustomHandler, method.BlockNumberMethod))
+					panic(fmt.Sprintf("custom handler %s for method %s is not implemented", method.CustomHandler, method.CustomMethod))
 				}
 				// on init it already validates all the methods on custom handler are of the expected signature
 				handlerFunc := handler.Interface().(func(*models.RPCReq) ([]*rpc.BlockNumberOrHash, error))
-				bnc.blockNumberMethodToCustomHandler[method.BlockNumberMethod] = handlerFunc
+				bnc.blockNumberMethodToCustomHandler[method.CustomMethod] = handlerFunc
 			}
 		}
 	}
@@ -213,7 +185,7 @@ func (b *BlockNumberConv) getBlockNumbers(req *models.RPCReq) ([]*rpc.BlockNumbe
 	return nil, nil
 }
 
-func (b *BlockNumberConv) GetBlockNumberMap(rpcReqs []*models.RPCReq) (map[string][]*rpc.BlockNumberOrHash, error) {
+func (b *BlockNumberConv) GetCustomMethodsMap(rpcReqs []*models.RPCReq) (map[string][]*rpc.BlockNumberOrHash, error) {
 	bnMethodsBlockNumber := make(map[string][]*rpc.BlockNumberOrHash, len(rpcReqs))
 
 	for _, req := range rpcReqs {
@@ -229,7 +201,7 @@ func (b *BlockNumberConv) GetBlockNumberMap(rpcReqs []*models.RPCReq) (map[strin
 	return bnMethodsBlockNumber, nil
 }
 
-func AddBlockNumberMethodsIfNeeded(rpcReqs []*models.RPCReq, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) ([]*models.RPCReq, map[string]string, error) {
+func (b *BlockNumberConv) AddGetterMethodsIfNeeded(rpcReqs []*models.RPCReq, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) ([]*models.RPCReq, map[string]string, error) {
 	idsHolder := make(map[string]string, len(bnMethodsBlockNumber))
 
 	for _, bns := range bnMethodsBlockNumber {
@@ -328,7 +300,7 @@ func buildGetBlockByNumberReq(tag, id string) *models.RPCReq {
 	}
 }
 
-func (b *BlockNumberConv) ChangeBlockNumberMethods(rpcReqs []*models.RPCReq) map[string]string {
+func (b *BlockNumberConv) ChangeCustomMethods(rpcReqs []*models.RPCReq) (map[string]string, error) {
 	changedMethods := make(map[string]string, len(rpcReqs))
 
 	for _, rpcReq := range rpcReqs {
@@ -341,7 +313,7 @@ func (b *BlockNumberConv) ChangeBlockNumberMethods(rpcReqs []*models.RPCReq) map
 		rpcReq.Method = regMethod
 	}
 
-	return changedMethods
+	return changedMethods, nil
 }
 
 func generateRandomNumberStringWithRetries(rpcReqs []*models.RPCReq) (string, error) {
@@ -413,7 +385,7 @@ func getBlockHolder(responses []*models.RPCResJSON, idsHolder map[string]string)
 	return bnHolder, responsesWithoutBN, nil
 }
 
-func (b *BlockNumberConv) ChangeBlockNumberResponses(responses []*models.RPCResJSON, changedMethods, idsHolder map[string]string, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) ([]*models.RPCResJSON, error) {
+func (b *BlockNumberConv) ChangeCustomMethodsResponses(responses []*models.RPCResJSON, changedMethods, idsHolder map[string]string, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) ([]*models.RPCResJSON, error) {
 	bnHolder, cleanRes, err := getBlockHolder(responses, idsHolder)
 	if err != nil {
 		return nil, err

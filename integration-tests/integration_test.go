@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/stateless-solutions/stateless-compatibility-layer/attestation"
-	blocknumber "github.com/stateless-solutions/stateless-compatibility-layer/block-number"
+	customrpcmethods "github.com/stateless-solutions/stateless-compatibility-layer/custom-rpc-methods"
 	"github.com/stateless-solutions/stateless-compatibility-layer/models"
 	rpccontext "github.com/stateless-solutions/stateless-compatibility-layer/rpc-context"
 )
@@ -106,13 +106,13 @@ func TestIntegration(t *testing.T) {
 				panic(err)
 			}
 
-			bn := blocknumber.NewBlockNumberConv(configFileTest)
+			ch := customrpcmethods.NewCustomMethodHolder(configFileTest)
 
 			context := &rpccontext.RPCContext{
-				SigningKey:      signer,
-				Identity:        identity,
-				DefaultChainURL: urlFlag,
-				BlockNumberConv: bn,
+				SigningKey:         signer,
+				Identity:           identity,
+				DefaultChainURL:    urlFlag,
+				CustomMethodHolder: ch,
 			}
 
 			// Create a handler using AttestorHandler

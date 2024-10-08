@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	blocknumber "github.com/stateless-solutions/stateless-compatibility-layer/block-number"
+	customrpcmethods "github.com/stateless-solutions/stateless-compatibility-layer/custom-rpc-methods"
 	"github.com/stateless-solutions/stateless-compatibility-layer/environment"
 	rpccontext "github.com/stateless-solutions/stateless-compatibility-layer/rpc-context"
 )
@@ -20,13 +20,13 @@ var (
 )
 
 func main() {
-	bn := blocknumber.NewBlockNumberConv(configFiles)
+	ch := customrpcmethods.NewCustomMethodHolder(configFiles)
 
 	context := &rpccontext.RPCContext{
-		Identity:        identity,
-		DefaultChainURL: defaultChainURL,
-		HTTPPort:        httpPort,
-		BlockNumberConv: bn,
+		Identity:           identity,
+		DefaultChainURL:    defaultChainURL,
+		HTTPPort:           httpPort,
+		CustomMethodHolder: ch,
 	}
 
 	if useAttestation {

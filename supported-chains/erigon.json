@@ -1,16 +1,17 @@
 {
+  "chainType": "evm",
     "methods": [
       {
-        "blockNumberMethod": "erigon_getLogsAndBlockRange",
+        "customMethod": "erigon_getLogsAndBlockRange",
         "originalMethod": "erigon_getLogs",
         "customHandler": "HandleGetLogsAndBlockRange",
-        "isBlockRange": true
+        "isRange": true
       },
       {
-        "blockNumberMethod": "erigon_getLatestLogsAndBlockRange",
+        "customMethod": "erigon_getLatestLogsAndBlockRange",
         "originalMethod": "erigon_getLatestLogs",
         "customHandler": "HandleGetLogsAndBlockRange",
-        "isBlockRange": true
+        "isRange": true
       }
     ]
 }
