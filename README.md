@@ -67,34 +67,40 @@ Before you begin, ensure you have the following installed on your system:
 
     ```json
     {
+        "chainType": "evm",
         "methods": [
             {
-                "blockNumberMethod": "eth_dummyMethodWithBlockNumber",
+                "customMethod": "eth_dummyMethodWithBlockNumber",
                 "originalMethod": "eth_dummyMethod",
-                "positionsBlockNumberParam": [1],
-                "isBlockRange": false
+                "positionsGetterParam": [1],
+                "isRange": false
             },
             {
-                "blockNumberMethod": "eth_anotherDummyMethodWithBlockNumber",
+                "customMethod": "eth_anotherDummyMethodWithBlockNumber",
                 "originalMethod": "eth_anotherDummyMethod",
-                "positionsBlockNumberParam": [0],
+                "positionsGetterParam": [0],
                 "customHandler": "HandleAnotherDummyMethodWithBlockNumber",
-                "isBlockRange": true
+                "isRange": true
             }
         ]
     }
     ```
 
+    - **Explanation of Concepts**:
+        - **`getterStuct`**: The type of the data that needs to be gotten to add to the stateless custom methods. This is a generic specified on `GetterStruct` in the `custom-rpc-methods/custom_rpc_methods.go` file. Current supported getter structs for each chain type are:
+            - **`EVM`**: the geth's standard [BlockNumbeOrHash](https://github.com/ethereum/go-ethereum/blob/master/rpc/types.go#L146)
+
     - **Explanation of Fields**:
-        - **`blockNumberMethod`**: The method name used to retrieve data along with the block number.
-        - **`originalMethod`**: The original method name without block number support.
-        - **`positionBlockNumberParam`**: Represents the 0-based index positions of the block number parameters in the method's parameter list. If there are multiple positions specified (indicating a range), the first one is treated as the "from" block, and the last one as the "to" block. For this range to be used, the `isBlockRange` parameter must be set to `true`; otherwise, any additional block numbers will be ignored.
-        The parameters at these positions must be of the geth's standard [BlockNumbeOrHash](https://github.com/ethereum/go-ethereum/blob/master/rpc/types.go#L146) type to extract the block number(s). If the parameters are of a different type, you should implement a custom handler to process them correctly.
+        - **`chainType`**: Chain type of the chain of the config file, this field is a enum specified on `ChainType` in the `custom-rpc-methods/custom_rpc_methods.go` file
+        - **`customMethod`**: The method name used to retrieve data along with the getter struct (block number in the case of EVM).
+        - **`originalMethod`**: The original method name without the getter struct support.
+        - **`positionsGetterParam`**: Represents the 0-based index positions of the getter struct parameters (block number in the case of EVM) in the method's parameter list. If there are multiple positions specified (indicating a range), the first one is treated as the "from", and the last one as the "to". For this range to be used, the `isRange` parameter must be set to `true`; otherwise, any additional positions params will be ignored.
+        For EVM chains the parameters at these positions must be of the geth's standard [BlockNumbeOrHash](https://github.com/ethereum/go-ethereum/blob/master/rpc/types.go#L146) type to extract the block number(s). If the parameters are of a different type, you should implement a custom handler to process them correctly.
         In case this field is empty it will be assumed all requests use the default block tag: latest for non range and earliest to latest for range.
         - **`customHandler`**: The name of the custom handler function that must be used for the method. 
-        This handler must have the following signature: `func(*models.RPCReq) ([]*rpc.BlockNumberOrHash, error)`. It is mandatory that this function be implemented as a public method within the `customHandlersHolder` struct, which is located in the `block-number/custom_handlers.go` file.
-        This parameter is optional. If not specified, the method will default to using the `positionsBlockNumberParam` to extract the block number(s).
-        - **`isBlockRange`**: A boolean indicating whether the method supports a range of blocks (i.e., if the block number parameter can specify a block range).
+        This handler must have the following signature for EVM chains: `func(*models.RPCReq) ([]*rpc.BlockNumberOrHash, error)`. It is mandatory that this function be implemented as a public method within the `evmCustomHandlersHolder` struct, which is located in the `custom-rpc-methods/evm_custom_handlers.go` file.
+        This parameter is optional. If not specified, the method will default to using the `positionsGetterParam` to extract the getter struct(s).
+        - **`isRange`**: A boolean indicating whether the method supports a range.
 
 2. **Run the Docker container:**
 
