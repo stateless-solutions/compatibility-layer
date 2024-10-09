@@ -36,22 +36,37 @@ type MethodsConfig struct {
 	Methods   []Method  `json:"methods"`
 }
 
-type CustomRpcMethodBuilder interface {
-	GetCustomMethodsMap(rpcReqs []*models.RPCReq) (map[string][]*rpc.BlockNumberOrHash, error)
+// GetterStruct is a generic for the type of the data that needs to be gotten from a chain type
+// this one is most likely related to blocks and can be input as tags
+type GetterStruct interface {
+	*rpc.BlockNumberOrHash | int // int is a placeholder, we will add more types shortly
+}
+
+// functions in this interface are in the order they are called
+type CustomRpcMethodBuilderGeneric[T GetterStruct] interface {
+	// GetCustomMethodsMap returns map of custom rpc methods to GetterType slice, slice needed in case of range
+	GetCustomMethodsMap(rpcReqs []*models.RPCReq) (map[string][]T, error)
+	// ChangeCustomMethods changes custom methods in rpc reqs slice to their original counterparts and returns map of the ID to original method
 	ChangeCustomMethods(rpcReqs []*models.RPCReq) (map[string]string, error)
-	AddGetterMethodsIfNeeded(rpcReqs []*models.RPCReq, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) ([]*models.RPCReq, map[string]string, error)
-	ChangeCustomMethodsResponses(responses []*models.RPCResJSON, changedMethods, idsHolder map[string]string, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) ([]*models.RPCResJSON, error)
+	// AddGetterMethodsIfNeeded returns rpc reqs with the getter rpc method for the getter struct and a map of tags to ID of the getter method
+	AddGetterMethodsIfNeeded(rpcReqs []*models.RPCReq, customMethodsMap map[string][]T) ([]*models.RPCReq, map[string]string, error)
+	// ChangeCustomMethodsResponses returns responses originally input as rpc reqs based on the responses of previous funcs
+	ChangeCustomMethodsResponses(responses []*models.RPCResJSON, changedMethods, idsHolder map[string]string, customMethodsMap map[string][]T) ([]*models.RPCResJSON, error)
+}
+
+// struct needed because we cannot diretcly assign CustomRpcMethodBuilderGeneric in a map
+type CustomMethodBuilders struct {
+	EVM CustomRpcMethodBuilderGeneric[*rpc.BlockNumberOrHash]
 }
 
 type CustomMethodHolder struct {
-	CustomRpcMethodBuilders   map[ChainType]CustomRpcMethodBuilder
+	CustomRpcMethodBuilders   CustomMethodBuilders
 	CustomMethodToChainType   map[string]ChainType
 	OriginalMethodToChainType map[string]ChainType
 }
 
 func NewCustomMethodHolder(configFiles string) *CustomMethodHolder {
 	ch := &CustomMethodHolder{
-		CustomRpcMethodBuilders:   make(map[ChainType]CustomRpcMethodBuilder, len(validChainTypes)),
 		CustomMethodToChainType:   map[string]ChainType{},
 		OriginalMethodToChainType: map[string]ChainType{},
 	}
@@ -84,7 +99,7 @@ func NewCustomMethodHolder(configFiles string) *CustomMethodHolder {
 
 	for chainType, configs := range configsMap {
 		if chainType == ChainTypeEVM {
-			ch.CustomRpcMethodBuilders[ChainTypeEVM] = NewBlockNumberConv(configs)
+			ch.CustomRpcMethodBuilders.EVM = NewBlockNumberConv(configs)
 		}
 	}
 
@@ -154,7 +169,7 @@ func (ch *CustomMethodHolder) getChainTypeFromOriginalMethods(originalMethods []
 	return chainType, nil
 }
 
-func (ch *CustomMethodHolder) GetCustomMethodsMap(rpcReqs []*models.RPCReq) (map[string][]*rpc.BlockNumberOrHash, error) {
+func (ch *CustomMethodHolder) GetCustomMethodsMap(rpcReqs []*models.RPCReq) (interface{}, error) {
 	chainType, err := ch.getChainTypeFromRPCReqCustomMethods(rpcReqs)
 	if err != nil {
 		return nil, err
@@ -163,7 +178,11 @@ func (ch *CustomMethodHolder) GetCustomMethodsMap(rpcReqs []*models.RPCReq) (map
 		return nil, nil
 	}
 
-	return ch.CustomRpcMethodBuilders[chainType].GetCustomMethodsMap(rpcReqs)
+	if chainType == ChainTypeEVM {
+		return ch.CustomRpcMethodBuilders.EVM.GetCustomMethodsMap(rpcReqs)
+	}
+
+	return nil, fmt.Errorf("unsupported chain type: %s", chainType)
 }
 
 func (ch *CustomMethodHolder) ChangeCustomMethods(rpcReqs []*models.RPCReq) (map[string]string, error) {
@@ -175,29 +194,43 @@ func (ch *CustomMethodHolder) ChangeCustomMethods(rpcReqs []*models.RPCReq) (map
 		return nil, nil
 	}
 
-	return ch.CustomRpcMethodBuilders[chainType].ChangeCustomMethods(rpcReqs)
+	if chainType == ChainTypeEVM {
+		return ch.CustomRpcMethodBuilders.EVM.ChangeCustomMethods(rpcReqs)
+	}
+
+	return nil, fmt.Errorf("unsupported chain type: %s", chainType)
 }
 
-func (ch *CustomMethodHolder) AddGetterMethodsIfNeeded(rpcReqs []*models.RPCReq, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) ([]*models.RPCReq, map[string]string, error) {
+func (ch *CustomMethodHolder) AddGetterMethodsIfNeeded(rpcReqs []*models.RPCReq, customMethodsMap interface{}) ([]*models.RPCReq, map[string]string, error) {
 	chainType, err := ch.getChainTypeFromRPCReqOriginalMethods(rpcReqs)
 	if err != nil {
 		return nil, nil, err
 	}
-	if chainType == "" {
+	if chainType == "" || customMethodsMap == nil {
 		return rpcReqs, nil, nil
 	}
 
-	return ch.CustomRpcMethodBuilders[chainType].AddGetterMethodsIfNeeded(rpcReqs, bnMethodsBlockNumber)
+	if chainType == ChainTypeEVM {
+		customMethodsMapToSend := customMethodsMap.(map[string][]*rpc.BlockNumberOrHash)
+		return ch.CustomRpcMethodBuilders.EVM.AddGetterMethodsIfNeeded(rpcReqs, customMethodsMapToSend)
+	}
+
+	return nil, nil, fmt.Errorf("unsupported chain type: %s", chainType)
 }
 
-func (ch *CustomMethodHolder) ChangeCustomMethodsResponses(responses []*models.RPCResJSON, changedMethods, idsHolder map[string]string, bnMethodsBlockNumber map[string][]*rpc.BlockNumberOrHash) ([]*models.RPCResJSON, error) {
+func (ch *CustomMethodHolder) ChangeCustomMethodsResponses(responses []*models.RPCResJSON, changedMethods, idsHolder map[string]string, customMethodsMap interface{}) ([]*models.RPCResJSON, error) {
 	chainType, err := ch.getChainTypeFromCustomMethodsMaps(changedMethods)
 	if err != nil {
 		return nil, err
 	}
-	if chainType == "" {
+	if chainType == "" || customMethodsMap == nil {
 		return responses, nil
 	}
 
-	return ch.CustomRpcMethodBuilders[chainType].ChangeCustomMethodsResponses(responses, changedMethods, idsHolder, bnMethodsBlockNumber)
+	if chainType == ChainTypeEVM {
+		customMethodsMapToSend := customMethodsMap.(map[string][]*rpc.BlockNumberOrHash)
+		return ch.CustomRpcMethodBuilders.EVM.ChangeCustomMethodsResponses(responses, changedMethods, idsHolder, customMethodsMapToSend)
+	}
+
+	return nil, fmt.Errorf("unsupported chain type: %s", chainType)
 }
