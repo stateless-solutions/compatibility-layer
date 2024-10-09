@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stateless-solutions/stateless-compatibility-layer/attestation"
 	customrpcmethods "github.com/stateless-solutions/stateless-compatibility-layer/custom-rpc-methods"
 	"github.com/stateless-solutions/stateless-compatibility-layer/models"
@@ -28,16 +27,16 @@ type RPCContext struct {
 }
 
 type reqHandler struct {
-	ChainURL        string
-	IsSlice         bool
-	IsGzip          bool
-	HTTPResponse    *http.Response
-	RPCReqs         []*models.RPCReq
-	RPCRess         []*models.RPCResJSON
-	RPCRessAttested []*models.RPCResJSONAttested
-	BlockMap        map[string][]*rpc.BlockNumberOrHash
-	ChangedMethods  map[string]string
-	IDsHolder       map[string]string
+	ChainURL         string
+	IsSlice          bool
+	IsGzip           bool
+	HTTPResponse     *http.Response
+	RPCReqs          []*models.RPCReq
+	RPCRess          []*models.RPCResJSON
+	RPCRessAttested  []*models.RPCResJSONAttested
+	CustomMethodsMap interface{} // this should always be of the type map[string][]T from custom-rpc-methods/custom_rpc_methods.go
+	ChangedMethods   map[string]string
+	IDsHolder        map[string]string
 }
 
 func (c *RPCContext) parseRPCReq(w http.ResponseWriter, r *http.Request, rh *reqHandler) error {
@@ -71,19 +70,19 @@ func (c *RPCContext) parseRPCReq(w http.ResponseWriter, r *http.Request, rh *req
 }
 
 func (c *RPCContext) modifyReq(w http.ResponseWriter, rh *reqHandler) error {
-	blockMap, err := c.CustomMethodHolder.GetCustomMethodsMap(rh.RPCReqs)
+	customMethodsMap, err := c.CustomMethodHolder.GetCustomMethodsMap(rh.RPCReqs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	rh.BlockMap = blockMap
+	rh.CustomMethodsMap = customMethodsMap
 	rh.ChangedMethods, err = c.CustomMethodHolder.ChangeCustomMethods(rh.RPCReqs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 
-	rh.RPCReqs, rh.IDsHolder, err = c.CustomMethodHolder.AddGetterMethodsIfNeeded(rh.RPCReqs, blockMap)
+	rh.RPCReqs, rh.IDsHolder, err = c.CustomMethodHolder.AddGetterMethodsIfNeeded(rh.RPCReqs, customMethodsMap)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
@@ -197,7 +196,7 @@ func (c *RPCContext) doRPCCall(w http.ResponseWriter, r *http.Request, rh *reqHa
 
 func (c *RPCContext) modifyRes(w http.ResponseWriter, rh *reqHandler) error {
 	var err error
-	rh.RPCRess, err = c.CustomMethodHolder.ChangeCustomMethodsResponses(rh.RPCRess, rh.ChangedMethods, rh.IDsHolder, rh.BlockMap)
+	rh.RPCRess, err = c.CustomMethodHolder.ChangeCustomMethodsResponses(rh.RPCRess, rh.ChangedMethods, rh.IDsHolder, rh.CustomMethodsMap)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
