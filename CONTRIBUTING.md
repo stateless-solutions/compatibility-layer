@@ -3,7 +3,7 @@
 
 Thank you for your interest in contributing to this project! Please take a moment to review these guidelines to make the process smooth and productive.
 
-## Pull Requests for Adding Support for a New Chain
+## Pull Requests for Adding Support for a New Chain of existing chain type
 
 If you are adding support for a new blockchain, follow these instructions carefully:
 
