@@ -1,0 +1,15 @@
+{
+    "chainType": "solana",
+      "methods": [
+        {
+          "customMethod": "getBlockAndContext",
+          "originalMethod": "getBlock",
+          "positionsGetterParam": [1]
+        },
+        {
+            "customMethod": "getBlockHeightAndContext",
+            "originalMethod": "getBlockHeight",
+            "positionsGetterParam": [0]
+          }
+      ]
+}

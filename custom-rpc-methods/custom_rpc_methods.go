@@ -7,17 +7,22 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/rpc"
+	gethRPC "github.com/ethereum/go-ethereum/rpc"
+	solanaRPC "github.com/gagliardetto/solana-go/rpc"
 	"github.com/stateless-solutions/stateless-compatibility-layer/models"
 )
 
 type ChainType string
 
-var (
-	ChainTypeEVM ChainType = "evm"
+const (
+	ChainTypeEVM    ChainType = "evm"
+	ChainTypeSolana ChainType = "solana"
+)
 
+var (
 	validChainTypes = map[ChainType]bool{
-		ChainTypeEVM: true,
+		ChainTypeEVM:    true,
+		ChainTypeSolana: true,
 	}
 
 	errDifferentChainTypes = errors.New("different chain types in the same batch")
@@ -36,14 +41,14 @@ type MethodsConfig struct {
 	Methods   []Method  `json:"methods"`
 }
 
-// GetterStruct is a generic for the type of the data that needs to be gotten from a chain type
+// GetterTypes is a generic for the type of the data that needs to be gotten from a chain type
 // this one is most likely related to blocks and can be input as tags
-type GetterStruct interface {
-	*rpc.BlockNumberOrHash | int // int is a placeholder, we will add more types shortly
+type GetterTypes interface {
+	*gethRPC.BlockNumberOrHash | solanaRPC.CommitmentType
 }
 
 // functions in this interface are in the order they are called
-type CustomRpcMethodBuilderGeneric[T GetterStruct] interface {
+type CustomRpcMethodBuilderGeneric[T GetterTypes] interface {
 	// GetCustomMethodsMap returns map of custom rpc methods to GetterType slice, slice needed in case of range
 	GetCustomMethodsMap(rpcReqs []*models.RPCReq) (map[string][]T, error)
 	// ChangeCustomMethods changes custom methods in rpc reqs slice to their original counterparts and returns map of the ID to original method
@@ -56,7 +61,8 @@ type CustomRpcMethodBuilderGeneric[T GetterStruct] interface {
 
 // struct needed because we cannot diretcly assign CustomRpcMethodBuilderGeneric in a map
 type CustomMethodBuilders struct {
-	EVM CustomRpcMethodBuilderGeneric[*rpc.BlockNumberOrHash]
+	EVM    CustomRpcMethodBuilderGeneric[*gethRPC.BlockNumberOrHash]
+	Solana CustomRpcMethodBuilderGeneric[solanaRPC.CommitmentType]
 }
 
 type CustomMethodHolder struct {
@@ -100,6 +106,9 @@ func NewCustomMethodHolder(configFiles string) *CustomMethodHolder {
 	for chainType, configs := range configsMap {
 		if chainType == ChainTypeEVM {
 			ch.CustomRpcMethodBuilders.EVM = NewBlockNumberConv(configs)
+		}
+		if chainType == ChainTypeSolana {
+			ch.CustomRpcMethodBuilders.Solana = NewContextConv(configs)
 		}
 	}
 
@@ -181,6 +190,9 @@ func (ch *CustomMethodHolder) GetCustomMethodsMap(rpcReqs []*models.RPCReq) (int
 	if chainType == ChainTypeEVM {
 		return ch.CustomRpcMethodBuilders.EVM.GetCustomMethodsMap(rpcReqs)
 	}
+	if chainType == ChainTypeSolana {
+		return ch.CustomRpcMethodBuilders.Solana.GetCustomMethodsMap(rpcReqs)
+	}
 
 	return nil, fmt.Errorf("unsupported chain type: %s", chainType)
 }
@@ -197,6 +209,9 @@ func (ch *CustomMethodHolder) ChangeCustomMethods(rpcReqs []*models.RPCReq) (map
 	if chainType == ChainTypeEVM {
 		return ch.CustomRpcMethodBuilders.EVM.ChangeCustomMethods(rpcReqs)
 	}
+	if chainType == ChainTypeSolana {
+		return ch.CustomRpcMethodBuilders.Solana.ChangeCustomMethods(rpcReqs)
+	}
 
 	return nil, fmt.Errorf("unsupported chain type: %s", chainType)
 }
@@ -211,8 +226,12 @@ func (ch *CustomMethodHolder) AddGetterMethodsIfNeeded(rpcReqs []*models.RPCReq,
 	}
 
 	if chainType == ChainTypeEVM {
-		customMethodsMapToSend := customMethodsMap.(map[string][]*rpc.BlockNumberOrHash)
+		customMethodsMapToSend := customMethodsMap.(map[string][]*gethRPC.BlockNumberOrHash)
 		return ch.CustomRpcMethodBuilders.EVM.AddGetterMethodsIfNeeded(rpcReqs, customMethodsMapToSend)
+	}
+	if chainType == ChainTypeSolana {
+		customMethodsMapToSend := customMethodsMap.(map[string][]solanaRPC.CommitmentType)
+		return ch.CustomRpcMethodBuilders.Solana.AddGetterMethodsIfNeeded(rpcReqs, customMethodsMapToSend)
 	}
 
 	return nil, nil, fmt.Errorf("unsupported chain type: %s", chainType)
@@ -228,8 +247,12 @@ func (ch *CustomMethodHolder) ChangeCustomMethodsResponses(responses []*models.R
 	}
 
 	if chainType == ChainTypeEVM {
-		customMethodsMapToSend := customMethodsMap.(map[string][]*rpc.BlockNumberOrHash)
+		customMethodsMapToSend := customMethodsMap.(map[string][]*gethRPC.BlockNumberOrHash)
 		return ch.CustomRpcMethodBuilders.EVM.ChangeCustomMethodsResponses(responses, changedMethods, idsHolder, customMethodsMapToSend)
+	}
+	if chainType == ChainTypeSolana {
+		customMethodsMapToSend := customMethodsMap.(map[string][]solanaRPC.CommitmentType)
+		return ch.CustomRpcMethodBuilders.Solana.ChangeCustomMethodsResponses(responses, changedMethods, idsHolder, customMethodsMapToSend)
 	}
 
 	return nil, fmt.Errorf("unsupported chain type: %s", chainType)
