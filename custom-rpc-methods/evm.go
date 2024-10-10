@@ -1,11 +1,8 @@
 package customrpcmethods
 
 import (
-	"crypto/rand"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"math/big"
 	"reflect"
 
 	"github.com/ethereum/go-ethereum/rpc"
@@ -23,8 +20,6 @@ type blockRangeResult struct {
 	EndingBlock   string      `json:"endingBlock"`
 }
 
-const JSONRPCErrorInternal = -32000
-
 var (
 	ErrInternalBlockNumberMethodNotMap = &models.RPCErr{
 		Code:          JSONRPCErrorInternal - 23,
@@ -35,18 +30,6 @@ var (
 	ErrInternalBlockNumberMethodNotNumberEntry = &models.RPCErr{
 		Code:          JSONRPCErrorInternal - 24,
 		Message:       "block number response does not have number entry",
-		HTTPErrorCode: 500,
-	}
-
-	ErrParseErr = &models.RPCErr{
-		Code:          -32700,
-		Message:       "parse error",
-		HTTPErrorCode: 400,
-	}
-
-	ErrInternal = &models.RPCErr{
-		Code:          JSONRPCErrorInternal,
-		Message:       "internal error",
 		HTTPErrorCode: 500,
 	}
 )
@@ -116,20 +99,21 @@ func remarshalBlockNumberOrHash(current interface{}) (*rpc.BlockNumberOrHash, er
 	return &bnh, nil
 }
 
-func remarshalTagMap(m map[string]interface{}, key string) (*rpc.BlockNumberOrHash, error) {
-	if m[key] == nil || m[key] == "" {
-		return nil, nil
-	}
-
-	current, ok := m[key].(string)
-	if !ok {
-		return nil, errors.New("expected string")
-	}
-
-	return remarshalBlockNumberOrHash(current)
-}
-
+// TODO: fix this, pos can actually be shorter on other chains
 func (b *BlockNumberConv) getBlockNumbers(req *models.RPCReq) ([]*rpc.BlockNumberOrHash, error) {
+	// in case params are empty
+	// default block tags are used: latest for non range and earliest to latest in range
+	if req.Params == nil {
+		if b.blockNumberMethodToIsBlockRange[req.Method] {
+			bnl, _ := remarshalBlockNumberOrHash("latest")
+			bne, _ := remarshalBlockNumberOrHash("earliest")
+			return []*rpc.BlockNumberOrHash{bne, bnl}, nil
+		} else {
+			bnl, _ := remarshalBlockNumberOrHash("latest")
+			return []*rpc.BlockNumberOrHash{bnl}, nil
+		}
+	}
+
 	_, ok := b.blockNumberToRegular[req.Method]
 	if ok {
 		customHandler, ok := b.blockNumberMethodToCustomHandler[req.Method]
@@ -314,55 +298,6 @@ func (b *BlockNumberConv) ChangeCustomMethods(rpcReqs []*models.RPCReq) (map[str
 	}
 
 	return changedMethods, nil
-}
-
-func generateRandomNumberStringWithRetries(rpcReqs []*models.RPCReq) (string, error) {
-	retries := 0
-	maxRetries := 5
-	id := ""
-	var err error
-
-	for retries < maxRetries {
-		id, err = generateRandomNumberString(12)
-		if err != nil {
-			return "", ErrInternal
-		}
-
-		// Check if the generated ID is repeated in the slice
-		if !isIDRepeated(id, rpcReqs) {
-			break
-		}
-
-		retries++
-	}
-
-	if retries == maxRetries {
-		return "", ErrInternal
-	}
-
-	return id, nil
-}
-
-func generateRandomNumberString(n int) (string, error) {
-	// The maximum value for a random number with n digits
-	max := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(n)), nil)
-
-	// Generate a random number
-	randomNumber, err := rand.Int(rand.Reader, max)
-	if err != nil {
-		return "", err
-	}
-
-	return randomNumber.String(), nil
-}
-
-func isIDRepeated(id string, rpcReqs []*models.RPCReq) bool {
-	for _, rpcReq := range rpcReqs {
-		if string(rpcReq.ID) == id {
-			return true
-		}
-	}
-	return false
 }
 
 func getBlockHolder(responses []*models.RPCResJSON, idsHolder map[string]string) (map[string]*models.RPCResJSON, []*models.RPCResJSON, error) {

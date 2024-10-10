@@ -596,6 +596,7 @@ func TestBlockNumber(t *testing.T) {
 			contentsToRewrite: []string{"earliest", "latest"},
 			idsToRewrite:      []string{"22", "23"},
 		},
+		// TODO: add unit tests for default block tag case
 	}
 
 	for _, tt := range tests {

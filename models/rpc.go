@@ -5,7 +5,7 @@ import "encoding/json"
 type RPCReq struct {
 	JSONRPC string          `json:"jsonrpc"`
 	Method  string          `json:"method"`
-	Params  json.RawMessage `json:"params"`
+	Params  json.RawMessage `json:"params,omitempty"`
 	ID      json.RawMessage `json:"id"`
 }
 

@@ -2,10 +2,24 @@ package customrpcmethods
 
 import (
 	"encoding/json"
+	"errors"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stateless-solutions/stateless-compatibility-layer/models"
 )
+
+func remarshalTagMap(m map[string]interface{}, key string) (*rpc.BlockNumberOrHash, error) {
+	if m[key] == nil || m[key] == "" {
+		return nil, nil
+	}
+
+	current, ok := m[key].(string)
+	if !ok {
+		return nil, errors.New("expected string")
+	}
+
+	return remarshalBlockNumberOrHash(current)
+}
 
 type evmCustomHandlersHolder struct{}
 
