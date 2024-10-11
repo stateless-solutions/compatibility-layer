@@ -25,6 +25,14 @@ var (
 		ChainTypeSolana: true,
 	}
 
+	chainTypeToCustomHandlerHolder = map[ChainType]interface{}{
+		ChainTypeEVM: evmCustomHandlersHolder{},
+	}
+
+	rangeSupportChainTypes = map[ChainType]bool{
+		ChainTypeEVM: true,
+	}
+
 	errDifferentChainTypes = errors.New("different chain types in the same batch")
 )
 
@@ -45,6 +53,18 @@ type MethodsConfig struct {
 // this one is most likely related to blocks and can be input as tags
 type GetterTypes interface {
 	*gethRPC.BlockNumberOrHash | solanaRPC.CommitmentType
+}
+
+type GetterReturns interface {
+	string | int
+}
+type GetterStructs interface {
+	blockNumberResult | contextResult
+}
+
+type noRangeSupported struct{} // placeholder struct for chains that don't support ranges
+type GetterRangeStructs interface {
+	blockRangeResult | noRangeSupported
 }
 
 // functions in this interface are in the order they are called
