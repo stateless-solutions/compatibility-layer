@@ -97,6 +97,8 @@ func TestIntegration(t *testing.T) {
 				t.Fatalf("Error creating mock request: %v", err)
 			}
 
+			req.Header.Set("Content-Type", "application/json")
+
 			// Mock response recorder
 			rec := httptest.NewRecorder()
 
