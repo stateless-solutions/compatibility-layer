@@ -35,7 +35,7 @@ func TestContext(t *testing.T) {
 				ID:     json.RawMessage("21"),
 				Result: 211,
 			}, {ID: json.RawMessage("22"),
-				Result: 21}},
+				Result: 2.1}},
 			expectedRes: &models.RPCResJSON{
 				ID: json.RawMessage("21"),
 				Result: contextResult{
@@ -70,7 +70,7 @@ func TestContext(t *testing.T) {
 			},
 		},
 		{
-			name: "Context response not int",
+			name: "Context response not float",
 			req: []*models.RPCReq{{
 				Method: "getBlockHeightAndContext",
 				ID:     json.RawMessage("21"),
@@ -88,7 +88,7 @@ func TestContext(t *testing.T) {
 				Result: "a"}},
 			contentsToRewrite: []string{"processed"},
 			idsToRewrite:      []string{"22"},
-			expectedErr:       ErrInternalSlotResultNotInt,
+			expectedErr:       ErrInternalSlotResultNotFloat,
 		},
 		{
 			name: "Error on data request",
@@ -165,7 +165,7 @@ func TestContext(t *testing.T) {
 				ID:     json.RawMessage("21"),
 				Result: 211,
 			}, {ID: json.RawMessage("22"),
-				Result: 21}},
+				Result: 2.1}},
 			expectedRes: &models.RPCResJSON{
 				ID: json.RawMessage("21"),
 				Result: contextResult{
@@ -194,7 +194,7 @@ func TestContext(t *testing.T) {
 				ID:     json.RawMessage("21"),
 				Result: 211,
 			}, {ID: json.RawMessage("22"),
-				Result: 21}},
+				Result: 2.1}},
 			expectedRes: &models.RPCResJSON{
 				ID: json.RawMessage("21"),
 				Result: contextResult{
@@ -223,7 +223,36 @@ func TestContext(t *testing.T) {
 				ID:     json.RawMessage("21"),
 				Result: 211,
 			}, {ID: json.RawMessage("22"),
-				Result: 21}},
+				Result: 2.1}},
+			expectedRes: &models.RPCResJSON{
+				ID: json.RawMessage("21"),
+				Result: contextResult{
+					Value: 211,
+					Context: context{
+						Slot: 21,
+					},
+				},
+			},
+			contentsToRewrite: []string{"finalized"},
+			idsToRewrite:      []string{"22"},
+		},
+		{
+			name: "Block height and string param",
+			req: []*models.RPCReq{{
+				Method: "getBlockHeightAndContext",
+				ID:     json.RawMessage("21"),
+				Params: json.RawMessage(`["json"]`),
+			}},
+			expectedReq: &models.RPCReq{
+				Method: "getBlockHeight",
+				ID:     json.RawMessage("21"),
+			},
+			expectedReqLength: 2,
+			res: []*models.RPCResJSON{{
+				ID:     json.RawMessage("21"),
+				Result: 211,
+			}, {ID: json.RawMessage("22"),
+				Result: 2.1}},
 			expectedRes: &models.RPCResJSON{
 				ID: json.RawMessage("21"),
 				Result: contextResult{

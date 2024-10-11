@@ -10,6 +10,71 @@
             "customMethod": "getBlockHeightAndContext",
             "originalMethod": "getBlockHeight",
             "positionsGetterParam": [0]
-          }
+        },
+        {
+            "customMethod": "getBlocksAndContext",
+            "originalMethod": "getBlocks",
+            "positionsGetterParam": [2]
+        },
+        {
+            "customMethod": "getBlocksWithLimitAndContext",
+            "originalMethod": "getBlocksWithLimit",
+            "positionsGetterParam": [2]
+        },
+        {
+            "customMethod": "getEpochInfoAndContext",
+            "originalMethod": "getEpochInfo",
+            "positionsGetterParam": [0]
+        },
+        {
+            "customMethod": "getInflationGovernorAndContext",
+            "originalMethod": "getInflationGovernor",
+            "positionsGetterParam": [0]
+        },
+        {
+            "customMethod": "getInflationRewardAndContext",
+            "originalMethod": "getInflationReward",
+            "positionsGetterParam": [1]
+        },
+        {
+            "customMethod": "getLeaderScheduleAndContext",
+            "originalMethod": "getLeaderSchedule",
+            "positionsGetterParam": [1]
+        },
+        {
+            "customMethod": "getMinimumBalanceForRentExemptionAndContext",
+            "originalMethod": "getMinimumBalanceForRentExemption",
+            "positionsGetterParam": [1]
+        },
+        {
+            "customMethod": "getProgramAccountsAndContext",
+            "originalMethod": "getProgramAccounts",
+            "positionsGetterParam": [1]
+        },
+        {
+            "customMethod": "getSignaturesForAddressAndContext",
+            "originalMethod": "getSignaturesForAddress",
+            "positionsGetterParam": [1]
+        },
+        {
+            "customMethod": "getSlotLeaderAndContext",
+            "originalMethod": "getSlotLeader",
+            "positionsGetterParam": [0]
+        },
+        {
+            "customMethod": "getTransactionAndContext",
+            "originalMethod": "getTransaction",
+            "positionsGetterParam": [1]
+        },
+        {
+            "customMethod": "getTransactionCountAndContext",
+            "originalMethod": "getTransactionCount",
+            "positionsGetterParam": [0]
+        },
+        {
+            "customMethod": "getVoteAccountsAndContext",
+            "originalMethod": "getVoteAccounts",
+            "positionsGetterParam": [0]
+        }
       ]
 }

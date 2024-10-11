@@ -3,6 +3,8 @@ package customrpcmethods
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 
 	solanaRPC "github.com/gagliardetto/solana-go/rpc"
 	"github.com/stateless-solutions/stateless-compatibility-layer/models"
@@ -18,9 +20,9 @@ type contextResult struct {
 }
 
 var (
-	ErrInternalSlotResultNotInt = &models.RPCErr{
+	ErrInternalSlotResultNotFloat = &models.RPCErr{
 		Code:          JSONRPCErrorInternal - 25,
-		Message:       "slot response is not an int",
+		Message:       "slot response is not a float",
 		HTTPErrorCode: 500,
 	}
 )
@@ -49,7 +51,7 @@ func NewContextConv(configs []MethodsConfig) *ContextConv {
 func extractCommitmentType(current interface{}) (solanaRPC.CommitmentType, error) {
 	cMap, ok := current.(map[string]interface{})
 	if !ok {
-		return "", ErrParseErr
+		return solanaRPC.CommitmentFinalized, nil // params can be a string in some cases, in which default commitment should be used
 	}
 
 	cTypeRaw, ok := cMap["commitment"]
@@ -129,7 +131,7 @@ func buildGetSlothReq(id string, cType solanaRPC.CommitmentType) *models.RPCReq 
 		JSONRPC: "2.0",
 		Method:  "getSlot",
 		ID:      json.RawMessage(id),
-		Params:  json.RawMessage(fmt.Sprintf(`[{"commitment":%s}]`, cType)),
+		Params:  json.RawMessage(fmt.Sprintf(`[{"commitment":"%s"}]`, cType)),
 	}
 }
 
@@ -232,9 +234,17 @@ func getCommitment(res *models.RPCResJSON, ctHolder map[string]*models.RPCResJSO
 			break // if there was an error the rest of the response is invalid
 		}
 
-		ctInt, ok := cth.Result.(int)
+		ctFloat, ok := cth.Result.(float64)
 		if !ok {
-			return nil, nil, ErrInternalSlotResultNotInt
+			return nil, nil, ErrInternalSlotResultNotFloat
+		}
+
+		floatStr := strconv.FormatFloat(ctFloat, 'f', -1, 64)
+		floatStrWithoutDot := strings.Replace(floatStr, ".", "", 1)
+
+		ctInt, err := strconv.Atoi(floatStrWithoutDot)
+		if err != nil {
+			return nil, nil, err
 		}
 
 		commitments = append(commitments, ctInt)

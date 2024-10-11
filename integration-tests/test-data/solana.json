@@ -1,0 +1,64 @@
+{
+    "cases":[
+         {
+            "name": "getBlockAndContext",
+            "reqBody":{"jsonrpc":"2.0","id":1,"method":"getBlockAndContext","params":[332109114,{"encoding":"json","maxSupportedTransactionVersion":0,"transactionDetails":"full","rewards":false}]}
+          },
+          {
+              "name": "getBlockHeightAndContext",
+            "reqBody":{"jsonrpc":"2.0","id":1,"method":"getBlockHeightAndContext"}
+          },
+          {
+              "name": "getBlocksAndContext",
+            "reqBody":{"jsonrpc":"2.0","id":1,"method":"getBlocksAndContext","params":[332109113,332109114]}
+          },
+          {
+              "name": "getBlocksWithLimitAndContext",
+            "reqBody":{"jsonrpc":"2.0","id":1,"method":"getBlocksWithLimitAndContext","params":[332109114,3]}
+          },
+          {
+              "name": "getEpochInfoAndContext",
+            "reqBody":{"jsonrpc":"2.0","id":1, "method":"getEpochInfoAndContext"}
+          },
+          {
+              "name": "getInflationGovernorAndContext",
+            "reqBody":{"jsonrpc":"2.0","id":1, "method":"getInflationGovernorAndContext"}
+          },
+          {
+              "name": "getInflationRewardAndContext",
+            "reqBody":{"jsonrpc":"2.0","id":1,"method":"getInflationRewardAndContext","params":[["6dmNQ5jwLeLk5REvio1JcMshcbvkYMwy26sJ8pbkvStu","BGsqMegLpV6n6Ve146sSX2dTjUMj3M92HnU8BbNRMhF2"]]}
+          },
+          {
+              "name": "getLeaderScheduleAndContext",
+            "reqBody":{"jsonrpc":"2.0","id":1,"method":"getLeaderScheduleAndContext","params":[null,{"identity":"4Qkev8aNZcqFNSRhQzwyLMFSsi94jHqE8WNVTJzTP99F"}]}
+          },
+          {
+              "name": "getMinimumBalanceForRentExemptionAndContext",
+            "reqBody":{"jsonrpc":"2.0","id":1,"method":"getMinimumBalanceForRentExemptionAndContext","params":[50]}
+          },
+          {
+              "name": "getProgramAccountsAndContext",
+            "reqBody":{"jsonrpc":"2.0","id":1,"method":"getProgramAccountsAndContext","params":["4Nd1mBQtrMJVYVfKf2PJy9NZUZdTAsp7D4xWLs4gDB4T",{"filters":[{"dataSize":17},{"memcmp":{"offset":4,"bytes":"3Mc6vR"}}]}]}
+          },
+          {
+              "name": "getSignaturesForAddressAndContext",
+            "reqBody":{"jsonrpc":"2.0","id":1,"method":"getSignaturesForAddressAndContext","params":["Vote111111111111111111111111111111111111111",{"limit":1}]}
+          },
+          {
+              "name": "getSlotLeaderAndContext",
+            "reqBody":{"jsonrpc":"2.0","id":1, "method":"getSlotLeaderAndContext"}
+          },
+          {
+              "name": "getTransactionAndContext",
+            "reqBody": {"jsonrpc":"2.0","id":1,"method":"getTransactionAndContext","params":["2nBhEBYYvfaAe16UMNqRHre4YNSskvuYgx3M6E4JP1oDYvZEJHvoPzyUidNgNX5r9sTyN1J9UxtbCXy2rqYcuyuv","json"]}
+          },
+          {
+              "name": "getTransactionCountAndContext",
+            "reqBody":{"jsonrpc":"2.0","id":1, "method":"getTransactionCountAndContext"}
+          },
+          {
+              "name": "getVoteAccountsAndContext",
+            "reqBody":{"jsonrpc":"2.0","id":1,"method":"getVoteAccountsAndContext","params":[{"votePubkey":"3ZT31jkAGhUaw8jsy4bTknwBMP8i4Eueh52By4zXcsVw"}]}
+          }
+    ]
+}
