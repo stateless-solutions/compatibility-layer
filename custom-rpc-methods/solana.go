@@ -126,7 +126,7 @@ func (b *ContextConv) GetCustomMethodsMap(rpcReqs []*models.RPCReq) (map[string]
 	return contextMethodsCommitmentType, nil
 }
 
-func buildGetSlothReq(id string, cType solanaRPC.CommitmentType) *models.RPCReq {
+func buildGetSlotReq(id string, cType solanaRPC.CommitmentType) *models.RPCReq {
 	return &models.RPCReq{
 		JSONRPC: "2.0",
 		Method:  "getSlot",
@@ -157,7 +157,7 @@ func (b *ContextConv) AddGetterMethodsIfNeeded(rpcReqs []*models.RPCReq, ctMetho
 					return nil, nil, err
 				}
 				idsHolder[string(ct)] = id
-				rpcReqs = append(rpcReqs, buildGetSlothReq(id, ct))
+				rpcReqs = append(rpcReqs, buildGetSlotReq(id, ct))
 			}
 		}
 	}
