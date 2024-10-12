@@ -8,16 +8,20 @@ import (
 	"github.com/stateless-solutions/stateless-compatibility-layer/models"
 )
 
+type GenericConvImpl[T GetterTypes, R GetterReturns, S GetterStructs, SR GetterRangeStructs] interface {
+	GetChainType() ChainType
+	GetDefaultGetter() T
+	GetDefaultGetterRange() []T // always first one should from and second one to
+	ExtractGetter(param interface{}) (T, error)
+	BuildGetterReq(id string, gt T) (*models.RPCReq, error)
+	GetIndexOfIDHolder(gt T) (string, error)
+	ExtractGetterReturn(result interface{}) (R, error)
+	ExtractGetterStruct(result interface{}, gr R) (S, error)
+	ExtractGetterRangeStruct(result interface{}, grTo, grFrom R) (SR, error)
+}
+
 type GenericConv[T GetterTypes, R GetterReturns, S GetterStructs, SR GetterRangeStructs] struct {
-	chainType                   ChainType
-	defaultGetter               T
-	defaultGetterRange          []T // always first one should from and second one to
-	getterExtractor             func(interface{}) (T, error)
-	getterReqBuilder            func(string, T) (*models.RPCReq, error)
-	idHolderIndexExtractor      func(T) (string, error)
-	getterReturnExtractor       func(interface{}) (R, error)
-	getterStructBuilder         func(interface{}, R) S
-	getterRangeStructBuilder    func(interface{}, R, R) SR
+	impl                        GenericConvImpl[T, R, S, SR]
 	customToRegular             map[string]string
 	customMethodToPos           map[string][]int
 	customMethodToIsRange       map[string]bool
@@ -25,20 +29,13 @@ type GenericConv[T GetterTypes, R GetterReturns, S GetterStructs, SR GetterRange
 }
 
 func NewGenericConv[T GetterTypes, R GetterReturns, S GetterStructs, SR GetterRangeStructs](configs []MethodsConfig,
-	chainType ChainType, defaultGetter T, defaultGetterRange []T, getterExtractor func(interface{}) (T, error),
-	getterReqBuilder func(string, T) (*models.RPCReq, error), idHolderIndexExtractor func(T) (string, error),
-	getterReturnExtractor func(interface{}) (R, error), getterStructBuilder func(interface{}, R) S, getterRangeStructBuilder func(interface{}, R, R) SR) *GenericConv[T, R, S, SR] {
+	impl GenericConvImpl[T, R, S, SR]) *GenericConv[T, R, S, SR] {
+	if impl == nil {
+		panic("implementation cannot be empty")
+	}
 
 	gc := &GenericConv[T, R, S, SR]{
-		chainType:                   chainType,
-		defaultGetter:               defaultGetter,
-		defaultGetterRange:          defaultGetterRange,
-		getterExtractor:             getterExtractor,
-		getterReqBuilder:            getterReqBuilder,
-		idHolderIndexExtractor:      idHolderIndexExtractor,
-		getterReturnExtractor:       getterReturnExtractor,
-		getterStructBuilder:         getterStructBuilder,
-		getterRangeStructBuilder:    getterRangeStructBuilder,
+		impl:                        impl,
 		customToRegular:             map[string]string{},
 		customMethodToPos:           map[string][]int{},
 		customMethodToIsRange:       map[string]bool{},
@@ -52,12 +49,12 @@ func NewGenericConv[T GetterTypes, R GetterReturns, S GetterStructs, SR GetterRa
 				panic(fmt.Sprintf("positions getter param length for method %s is %d and the max allowed is 2", method.CustomMethod, len(method.PositionsGetterParam)))
 			}
 			gc.customMethodToPos[method.CustomMethod] = method.PositionsGetterParam
-			if method.IsRange && !rangeSupportChainTypes[chainType] {
-				panic(fmt.Sprintf("is range is true for method %s of chain type %s that doesn't support it", method.CustomMethod, chainType))
+			if method.IsRange && !rangeSupportChainTypes[gc.impl.GetChainType()] {
+				panic(fmt.Sprintf("is range is true for method %s of chain type %s that doesn't support it", method.CustomMethod, gc.impl.GetChainType()))
 			}
 			gc.customMethodToIsRange[method.CustomMethod] = method.IsRange
 			if method.CustomHandler != "" {
-				handler := reflect.ValueOf(chainTypeToCustomHandlerHolder[chainType]).MethodByName(method.CustomHandler)
+				handler := reflect.ValueOf(chainTypeToCustomHandlerHolder[gc.impl.GetChainType()]).MethodByName(method.CustomHandler)
 				if !handler.IsValid() {
 					panic(fmt.Sprintf("custom handler %s for method %s is not implemented", method.CustomHandler, method.CustomMethod))
 				}
@@ -73,9 +70,9 @@ func NewGenericConv[T GetterTypes, R GetterReturns, S GetterStructs, SR GetterRa
 
 func (g *GenericConv[T, R, S, SR]) returnDefaultGetters(req *models.RPCReq) []T {
 	if g.customMethodToIsRange[req.Method] {
-		return g.defaultGetterRange
+		return g.impl.GetDefaultGetterRange()
 	} else {
-		return []T{g.defaultGetter}
+		return []T{g.impl.GetDefaultGetter()}
 	}
 }
 
@@ -113,16 +110,16 @@ func (g *GenericConv[T, R, S, SR]) getGetters(req *models.RPCReq) ([]T, error) {
 				// default getters are used
 				if i == 0 {
 					if g.customMethodToIsRange[req.Method] {
-						gts = append(gts, g.defaultGetterRange[0])
+						gts = append(gts, g.impl.GetDefaultGetterRange()[0])
 						defaultFromUsed = true
 						continue
 					} else {
-						return []T{g.defaultGetter}, nil
+						return []T{g.impl.GetDefaultGetter()}, nil
 					}
 				}
 				if i == 1 && g.customMethodToIsRange[req.Method] {
 					if defaultFromUsed {
-						gts = append(gts, g.defaultGetterRange[1])
+						gts = append(gts, g.impl.GetDefaultGetterRange()[1])
 					}
 					// if to getter param is not present in range and from was
 					// it will be assumed a range of one will be done
@@ -131,7 +128,7 @@ func (g *GenericConv[T, R, S, SR]) getGetters(req *models.RPCReq) ([]T, error) {
 				return nil, ErrParseErr
 			}
 
-			gt, err := g.getterExtractor(p[pos])
+			gt, err := g.impl.ExtractGetter(p[pos])
 			if err != nil {
 				return nil, err
 			}
@@ -170,11 +167,11 @@ func (g *GenericConv[T, R, S, SR]) AddGetterMethodsIfNeeded(rpcReqs []*models.RP
 			if err != nil {
 				return nil, nil, err
 			}
-			index, err := g.idHolderIndexExtractor(c)
+			index, err := g.impl.GetIndexOfIDHolder(c)
 			if err != nil {
 				return nil, nil, err
 			}
-			req, err := g.getterReqBuilder(id, c)
+			req, err := g.impl.BuildGetterReq(id, c)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -249,7 +246,7 @@ func (g *GenericConv[T, R, S, SR]) getGetterReturn(res *models.RPCResJSON, gtHol
 	var getterReturns []R
 	var gtError *models.RPCErr
 	for _, gt := range gts {
-		index, err := g.idHolderIndexExtractor(gt)
+		index, err := g.impl.GetIndexOfIDHolder(gt)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -260,7 +257,7 @@ func (g *GenericConv[T, R, S, SR]) getGetterReturn(res *models.RPCResJSON, gtHol
 			break // if there was an error the rest of the response is invalid
 		}
 
-		gtr, err := g.getterReturnExtractor(gth.Result)
+		gtr, err := g.impl.ExtractGetterReturn(gth.Result)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -291,9 +288,17 @@ func (b *GenericConv[T, R, S, SR]) changeResultToGetterStruct(res *models.RPCRes
 		if len(getterReturn) > 1 {
 			to = getterReturn[1]
 		}
-		res.Result = b.getterRangeStructBuilder(res.Result, from, to)
+		newRes, err := b.impl.ExtractGetterRangeStruct(res.Result, from, to)
+		if err != nil {
+			return err
+		}
+		res.Result = newRes
 	} else {
-		res.Result = b.getterStructBuilder(res.Result, getterReturn[0])
+		newRes, err := b.impl.ExtractGetterStruct(res.Result, getterReturn[0])
+		if err != nil {
+			return err
+		}
+		res.Result = newRes
 	}
 
 	return nil
