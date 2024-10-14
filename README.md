@@ -89,6 +89,7 @@ Before you begin, ensure you have the following installed on your system:
     - **Explanation of Concepts**:
         - **`getterStuct`**: The type of the data that needs to be gotten to add to the stateless custom methods. This is a generic specified on `GetterStruct` in the `custom-rpc-methods/custom_rpc_methods.go` file. Current supported getter structs for each chain type are:
             - **`EVM`**: the geth's standard [BlockNumbeOrHash](https://github.com/ethereum/go-ethereum/blob/master/rpc/types.go#L146)
+            - **`Solana`**: the solana go's standard [CommitmentType](https://github.com/gagliardetto/solana-go/blob/main/rpc/types.go#L431)
 
     - **Explanation of Fields**:
         - **`chainType`**: Chain type of the chain of the config file, this field is a enum specified on `ChainType` in the `custom-rpc-methods/custom_rpc_methods.go` file
