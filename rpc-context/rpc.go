@@ -34,7 +34,7 @@ type reqHandler struct {
 	RPCReqs          []*models.RPCReq
 	RPCRess          []*models.RPCResJSON
 	RPCRessAttested  []*models.RPCResJSONAttested
-	CustomMethodsMap interface{} // this should always be of the type map[string][]T from custom-rpc-methods/custom_rpc_methods.go
+	CustomMethodsMap map[string][]customrpcmethods.GetterTypesHolder
 	ChangedMethods   map[string]string
 	IDsHolder        map[string]string
 }

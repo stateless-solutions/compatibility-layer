@@ -7,18 +7,8 @@ import (
 	"github.com/stateless-solutions/stateless-compatibility-layer/models"
 )
 
-func TestBlockNumber(t *testing.T) {
-	tests := []struct {
-		name              string
-		req               []*models.RPCReq
-		expectedReq       *models.RPCReq
-		expectedReqLength int
-		res               []*models.RPCResJSON
-		idsToRewrite      []string // needed to be able to assest bc in the real code the id is random
-		contentsToRewrite []string
-		expectedRes       *models.RPCResJSON
-		expectedErr       error
-	}{
+func TestEVM(t *testing.T) {
+	tests := []testCaseGenericConv{
 		{
 			name: "Call and block number latest tag",
 			req: []*models.RPCReq{{
@@ -596,52 +586,97 @@ func TestBlockNumber(t *testing.T) {
 			contentsToRewrite: []string{"earliest", "latest"},
 			idsToRewrite:      []string{"22", "23"},
 		},
-		// TODO: add unit tests for default block tag case
+		{
+			name: "Log and block range no input",
+			req: []*models.RPCReq{{
+				Method: "eth_getLogsAndBlockRange",
+				ID:     json.RawMessage("21"),
+				Params: json.RawMessage(`[{}]`),
+			}},
+			expectedReq: &models.RPCReq{
+				Method: "eth_getLogs",
+				ID:     json.RawMessage("21"),
+			},
+			expectedReqLength: 3,
+			res: []*models.RPCResJSON{{
+				ID:     json.RawMessage("21"),
+				Result: "aaa",
+			}, {ID: json.RawMessage("22"),
+				Result: map[string]interface{}{"number": "0x21"}},
+				{ID: json.RawMessage("23"),
+					Result: map[string]interface{}{"number": "0x22"}}},
+			expectedRes: &models.RPCResJSON{
+				ID: json.RawMessage("21"),
+				Result: blockRangeResult{
+					Data:          "aaa",
+					StartingBlock: "0x21",
+					EndingBlock:   "0x22",
+				},
+			},
+			contentsToRewrite: []string{"earliest", "latest"},
+			idsToRewrite:      []string{"22", "23"},
+		},
+		{
+			name: "Log and block range just from input",
+			req: []*models.RPCReq{{
+				Method: "eth_getLogsAndBlockRange",
+				ID:     json.RawMessage("21"),
+				Params: json.RawMessage(`[{"fromBlock": "safe"}]`),
+			}},
+			expectedReq: &models.RPCReq{
+				Method: "eth_getLogs",
+				ID:     json.RawMessage("21"),
+			},
+			expectedReqLength: 3,
+			res: []*models.RPCResJSON{{
+				ID:     json.RawMessage("21"),
+				Result: "aaa",
+			}, {ID: json.RawMessage("22"),
+				Result: map[string]interface{}{"number": "0x21"}},
+				{ID: json.RawMessage("23"),
+					Result: map[string]interface{}{"number": "0x22"}}},
+			expectedRes: &models.RPCResJSON{
+				ID: json.RawMessage("21"),
+				Result: blockRangeResult{
+					Data:          "aaa",
+					StartingBlock: "0x21",
+					EndingBlock:   "0x22",
+				},
+			},
+			contentsToRewrite: []string{"safe", "latest"},
+			idsToRewrite:      []string{"22", "23"},
+		},
+		{
+			name: "Log and block range just to input",
+			req: []*models.RPCReq{{
+				Method: "eth_getLogsAndBlockRange",
+				ID:     json.RawMessage("21"),
+				Params: json.RawMessage(`[{"toBlock": "pending"}]`),
+			}},
+			expectedReq: &models.RPCReq{
+				Method: "eth_getLogs",
+				ID:     json.RawMessage("21"),
+			},
+			expectedReqLength: 3,
+			res: []*models.RPCResJSON{{
+				ID:     json.RawMessage("21"),
+				Result: "aaa",
+			}, {ID: json.RawMessage("22"),
+				Result: map[string]interface{}{"number": "0x21"}},
+				{ID: json.RawMessage("23"),
+					Result: map[string]interface{}{"number": "0x22"}}},
+			expectedRes: &models.RPCResJSON{
+				ID: json.RawMessage("21"),
+				Result: blockRangeResult{
+					Data:          "aaa",
+					StartingBlock: "0x21",
+					EndingBlock:   "0x22",
+				},
+			},
+			contentsToRewrite: []string{"earliest", "pending"},
+			idsToRewrite:      []string{"22", "23"},
+		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ch := NewCustomMethodHolder("../supported-chains/ethereum.json")
-
-			blockMap, err := ch.GetCustomMethodsMap(tt.req)
-			if err != nil {
-				t.Fatalf("Test case %s: Error not expected, got %v", tt.name, err)
-			}
-			changedMethods, _ := ch.ChangeCustomMethods(tt.req)
-
-			if tt.req[0].Method != tt.expectedReq.Method {
-				t.Errorf("Test case %s: Expected method %s, got %s", tt.name, tt.expectedReq.Method, tt.req[0].Method)
-			}
-
-			var idsHolder map[string]string
-			tt.req, idsHolder, _ = ch.AddGetterMethodsIfNeeded(tt.req, blockMap)
-
-			if tt.idsToRewrite != nil && tt.contentsToRewrite != nil {
-				for i := 0; i < len(tt.idsToRewrite); i++ {
-					idsHolder[tt.contentsToRewrite[i]] = tt.idsToRewrite[i]
-				}
-			}
-
-			if len(tt.req) != tt.expectedReqLength {
-				t.Errorf("Test case %s: Expected req length %d, got %d", tt.name, tt.expectedReqLength, len(tt.req))
-			}
-
-			ress, err := ch.ChangeCustomMethodsResponses(tt.res, changedMethods, idsHolder, blockMap)
-			if err != tt.expectedErr {
-				t.Fatalf("Test case %s: Expected error %v, got %v", tt.name, tt.expectedErr, err)
-			}
-
-			if err == nil {
-				if tt.expectedRes.Error != nil {
-					if ress[0].Error.Message != tt.expectedRes.Error.Message {
-						t.Errorf("Test case %s: Expected rpc error %s, got %s", tt.name, tt.expectedRes.Error.Message, tt.res[0].Error.Message)
-					}
-				}
-
-				if ress[0].Result != tt.expectedRes.Result {
-					t.Errorf("Test case %s: Expected response %s, got %s", tt.name, tt.expectedRes.Result, tt.res[0].Result)
-				}
-			}
-		})
-	}
+	runTests(t, "../supported-chains/ethereum.json", tests)
 }

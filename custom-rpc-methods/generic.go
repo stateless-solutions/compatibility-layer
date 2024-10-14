@@ -3,23 +3,54 @@ package customrpcmethods
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 
+	gethRPC "github.com/ethereum/go-ethereum/rpc"
+	solanaRPC "github.com/gagliardetto/solana-go/rpc"
 	"github.com/stateless-solutions/stateless-compatibility-layer/models"
 )
 
+// GetterTypes is a generic for the type of the data that needs to be gotten from a chain type
+// this one is most likely related to blocks and can be input as tags
+type GetterTypes interface {
+	*gethRPC.BlockNumberOrHash | solanaRPC.CommitmentType
+}
+
+// GetterReturns is a generic of all the possible types of the data gotten for each chain type
+type GetterReturns interface {
+	string | int
+}
+
+// GetterStructs is a generic of all custom structs to return in the non range custom methods
+type GetterStructs interface {
+	blockNumberResult | contextResult
+}
+
+// GetterRangeStructs is a generic of all custom structs to return in the range custom methods
+type GetterRangeStructs interface {
+	blockRangeResult | noRangeSupported
+}
+
+type noRangeSupported struct{} // placeholder struct for chains that don't support ranges
+
+// GenericConvImpl is an interface for each chain type to be used in the generic converter
 type GenericConvImpl[T GetterTypes, R GetterReturns, S GetterStructs, SR GetterRangeStructs] interface {
 	GetChainType() ChainType
+	SupportsRange() bool
 	GetDefaultGetter() T
 	GetDefaultGetterRange() []T // always first one should from and second one to
+	GetCustomHandlerMap() map[string]func(*models.RPCReq) ([]T, error)
+	FromGetterTypeToHolder(gth GetterTypesHolder) T
+	FromHolderToGetterType(gt T) GetterTypesHolder
 	ExtractGetter(param interface{}) (T, error)
 	BuildGetterReq(id string, gt T) (*models.RPCReq, error)
 	GetIndexOfIDHolder(gt T) (string, error)
-	ExtractGetterReturn(result interface{}) (R, error)
-	ExtractGetterStruct(result interface{}, gr R) (S, error)
-	ExtractGetterRangeStruct(result interface{}, grTo, grFrom R) (SR, error)
+	ExtractGetterReturnFromResponse(res *models.RPCResJSON) (R, error)
+	ExtractGetterReturnFromType(gt T) (R, error)
+	ExtractGetterStruct(res *models.RPCResJSON, gr R) (S, error)
+	ExtractGetterRangeStruct(res *models.RPCResJSON, grTo, grFrom R) (SR, error)
 }
 
+// GenericConv is the generic struct for the converter of all chain types
 type GenericConv[T GetterTypes, R GetterReturns, S GetterStructs, SR GetterRangeStructs] struct {
 	impl                        GenericConvImpl[T, R, S, SR]
 	customToRegular             map[string]string
@@ -28,44 +59,47 @@ type GenericConv[T GetterTypes, R GetterReturns, S GetterStructs, SR GetterRange
 	customMethodToCustomHandler map[string]func(*models.RPCReq) ([]T, error)
 }
 
-func NewGenericConv[T GetterTypes, R GetterReturns, S GetterStructs, SR GetterRangeStructs](configs []MethodsConfig,
-	impl GenericConvImpl[T, R, S, SR]) *GenericConv[T, R, S, SR] {
+func NewGenericConv[T GetterTypes, R GetterReturns, S GetterStructs, SR GetterRangeStructs](impl GenericConvImpl[T, R, S, SR]) *GenericConv[T, R, S, SR] {
 	if impl == nil {
 		panic("implementation cannot be empty")
 	}
+	if impl.SupportsRange() && len(impl.GetDefaultGetterRange()) != 2 {
+		panic(fmt.Sprintf("default getter range len is %d and it must be 2", len(impl.GetDefaultGetterRange())))
+	}
 
-	gc := &GenericConv[T, R, S, SR]{
+	return &GenericConv[T, R, S, SR]{
 		impl:                        impl,
 		customToRegular:             map[string]string{},
 		customMethodToPos:           map[string][]int{},
 		customMethodToIsRange:       map[string]bool{},
 		customMethodToCustomHandler: map[string]func(*models.RPCReq) ([]T, error){},
 	}
+}
 
+func (g *GenericConv[T, R, S, SR]) PopulateConfig(configs []MethodsConfig) {
 	for _, config := range configs {
 		for _, method := range config.Methods {
-			gc.customToRegular[method.CustomMethod] = method.OriginalMethod
+			g.customToRegular[method.CustomMethod] = method.OriginalMethod
 			if len(method.PositionsGetterParam) > 2 {
 				panic(fmt.Sprintf("positions getter param length for method %s is %d and the max allowed is 2", method.CustomMethod, len(method.PositionsGetterParam)))
 			}
-			gc.customMethodToPos[method.CustomMethod] = method.PositionsGetterParam
-			if method.IsRange && !rangeSupportChainTypes[gc.impl.GetChainType()] {
-				panic(fmt.Sprintf("is range is true for method %s of chain type %s that doesn't support it", method.CustomMethod, gc.impl.GetChainType()))
+			g.customMethodToPos[method.CustomMethod] = method.PositionsGetterParam
+			if method.IsRange && !g.impl.SupportsRange() {
+				panic(fmt.Sprintf("is range is true for method %s of chain type %s that doesn't support it", method.CustomMethod, g.impl.GetChainType()))
 			}
-			gc.customMethodToIsRange[method.CustomMethod] = method.IsRange
+			g.customMethodToIsRange[method.CustomMethod] = method.IsRange
 			if method.CustomHandler != "" {
-				handler := reflect.ValueOf(chainTypeToCustomHandlerHolder[gc.impl.GetChainType()]).MethodByName(method.CustomHandler)
-				if !handler.IsValid() {
+				if g.impl.GetCustomHandlerMap() == nil {
+					panic(fmt.Sprintf("method type %s has a custom handler and chain type %s doesn't support it", method.CustomMethod, g.impl.GetChainType()))
+				}
+				handlerFunc, ok := g.impl.GetCustomHandlerMap()[method.CustomHandler]
+				if !ok {
 					panic(fmt.Sprintf("custom handler %s for method %s is not implemented", method.CustomHandler, method.CustomMethod))
 				}
-				// on init it already validates all the methods on custom handler are of the expected signature
-				handlerFunc := handler.Interface().(func(*models.RPCReq) ([]T, error))
-				gc.customMethodToCustomHandler[method.CustomMethod] = handlerFunc
+				g.customMethodToCustomHandler[method.CustomMethod] = handlerFunc
 			}
 		}
 	}
-
-	return gc
 }
 
 func (g *GenericConv[T, R, S, SR]) returnDefaultGetters(req *models.RPCReq) []T {
@@ -142,41 +176,55 @@ func (g *GenericConv[T, R, S, SR]) getGetters(req *models.RPCReq) ([]T, error) {
 	return nil, nil
 }
 
-func (g *GenericConv[T, R, S, SR]) GetCustomMethodsMap(rpcReqs []*models.RPCReq) (map[string][]T, error) {
-	customMethodsGetter := make(map[string][]T, len(rpcReqs))
+func (g *GenericConv[T, R, S, SR]) GetCustomMethodsMap(rpcReqs []*models.RPCReq) (map[string][]GetterTypesHolder, error) {
+	customMethodsGetter := make(map[string][]GetterTypesHolder, len(rpcReqs))
 
 	for _, req := range rpcReqs {
-		cm, err := g.getGetters(req)
+		cms, err := g.getGetters(req)
 		if err != nil {
 			return nil, err
 		}
-		if cm != nil {
-			customMethodsGetter[string(req.ID)] = cm
+		if cms != nil {
+			var cmhs []GetterTypesHolder
+			for _, cm := range cms {
+				cmhs = append(cmhs, g.impl.FromHolderToGetterType(cm))
+			}
+			customMethodsGetter[string(req.ID)] = cmhs
 		}
 	}
 
 	return customMethodsGetter, nil
 }
 
-func (g *GenericConv[T, R, S, SR]) AddGetterMethodsIfNeeded(rpcReqs []*models.RPCReq, cMethodsGetter map[string][]T) ([]*models.RPCReq, map[string]string, error) {
+func (g *GenericConv[T, R, S, SR]) AddGetterMethodsIfNeeded(rpcReqs []*models.RPCReq, cMethodsGetter map[string][]GetterTypesHolder) ([]*models.RPCReq, map[string]string, error) {
 	idsHolder := make(map[string]string, len(cMethodsGetter))
 
 	for _, cs := range cMethodsGetter {
 		for _, c := range cs {
-			id, err := generateRandomNumberStringWithRetries(rpcReqs)
+			parsedC := g.impl.FromGetterTypeToHolder(c)
+
+			index, err := g.impl.GetIndexOfIDHolder(parsedC)
 			if err != nil {
 				return nil, nil, err
 			}
-			index, err := g.impl.GetIndexOfIDHolder(c)
-			if err != nil {
-				return nil, nil, err
+
+			if index != "" {
+				_, ok := idsHolder[index]
+				if !ok {
+					id, err := generateRandomNumberStringWithRetries(rpcReqs)
+					if err != nil {
+						return nil, nil, err
+					}
+
+					req, err := g.impl.BuildGetterReq(id, parsedC)
+					if err != nil {
+						return nil, nil, err
+					}
+
+					idsHolder[index] = id
+					rpcReqs = append(rpcReqs, req)
+				}
 			}
-			req, err := g.impl.BuildGetterReq(id, c)
-			if err != nil {
-				return nil, nil, err
-			}
-			idsHolder[index] = id
-			rpcReqs = append(rpcReqs, req)
 		}
 	}
 
@@ -219,7 +267,7 @@ func getGetterHolder(responses []*models.RPCResJSON, idsHolder map[string]string
 	return gHolder, responsesWithoutG, nil
 }
 
-func (b *GenericConv[T, R, S, SR]) ChangeCustomMethodsResponses(responses []*models.RPCResJSON, changedMethods, idsHolder map[string]string, cMethodsGetter map[string][]T) ([]*models.RPCResJSON, error) {
+func (b *GenericConv[T, R, S, SR]) ChangeCustomMethodsResponses(responses []*models.RPCResJSON, changedMethods, idsHolder map[string]string, cMethodsGetter map[string][]GetterTypesHolder) ([]*models.RPCResJSON, error) {
 	gHolder, cleanRes, err := getGetterHolder(responses, idsHolder)
 	if err != nil {
 		return nil, err
@@ -240,35 +288,45 @@ func (b *GenericConv[T, R, S, SR]) ChangeCustomMethodsResponses(responses []*mod
 	return cleanRes, nil
 }
 
-func (g *GenericConv[T, R, S, SR]) getGetterReturn(res *models.RPCResJSON, gtHolder map[string]*models.RPCResJSON, cMethodsGetter map[string][]T) ([]R, *models.RPCErr, error) {
+func (g *GenericConv[T, R, S, SR]) getGetterReturn(res *models.RPCResJSON, gtHolder map[string]*models.RPCResJSON, cMethodsGetter map[string][]GetterTypesHolder) ([]R, *models.RPCErr, error) {
 	gts := cMethodsGetter[string(res.ID)]
 
 	var getterReturns []R
 	var gtError *models.RPCErr
 	for _, gt := range gts {
-		index, err := g.impl.GetIndexOfIDHolder(gt)
+		parsedGt := g.impl.FromGetterTypeToHolder(gt)
+
+		index, err := g.impl.GetIndexOfIDHolder(parsedGt)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		gth := gtHolder[index]
-		if gth.Error != nil {
-			gtError = gth.Error
-			break // if there was an error the rest of the response is invalid
-		}
+		if index != "" {
+			gth := gtHolder[index]
+			if gth.Error != nil {
+				gtError = gth.Error
+				break // if there was an error the rest of the response is invalid
+			}
 
-		gtr, err := g.impl.ExtractGetterReturn(gth.Result)
-		if err != nil {
-			return nil, nil, err
-		}
+			gtr, err := g.impl.ExtractGetterReturnFromResponse(gth)
+			if err != nil {
+				return nil, nil, err
+			}
 
-		getterReturns = append(getterReturns, gtr)
+			getterReturns = append(getterReturns, gtr)
+		} else {
+			gtr, err := g.impl.ExtractGetterReturnFromType(parsedGt)
+			if err != nil {
+				return nil, nil, err
+			}
+			getterReturns = append(getterReturns, gtr)
+		}
 	}
 
 	return getterReturns, gtError, nil
 }
 
-func (b *GenericConv[T, R, S, SR]) changeResultToGetterStruct(res *models.RPCResJSON, gtHolder map[string]*models.RPCResJSON, cMethodsGetter map[string][]T, originalMethod string) error {
+func (b *GenericConv[T, R, S, SR]) changeResultToGetterStruct(res *models.RPCResJSON, gtHolder map[string]*models.RPCResJSON, cMethodsGetter map[string][]GetterTypesHolder, originalMethod string) error {
 	if res.Error != nil {
 		return nil // if there is an error the rest of the response is invalid
 	}
@@ -288,13 +346,13 @@ func (b *GenericConv[T, R, S, SR]) changeResultToGetterStruct(res *models.RPCRes
 		if len(getterReturn) > 1 {
 			to = getterReturn[1]
 		}
-		newRes, err := b.impl.ExtractGetterRangeStruct(res.Result, from, to)
+		newRes, err := b.impl.ExtractGetterRangeStruct(res, from, to)
 		if err != nil {
 			return err
 		}
 		res.Result = newRes
 	} else {
-		newRes, err := b.impl.ExtractGetterStruct(res.Result, getterReturn[0])
+		newRes, err := b.impl.ExtractGetterStruct(res, getterReturn[0])
 		if err != nil {
 			return err
 		}
