@@ -78,7 +78,7 @@ func TestSolana(t *testing.T) {
 				Result: "a"}},
 			contentsToRewrite: []string{"processed"},
 			idsToRewrite:      []string{"22"},
-			expectedErr:       ErrInternalSlotResultNotFloat,
+			expectedErr:       ErrInternalSlotResultNotExpectedType,
 		},
 		{
 			name: "Error on data request",
