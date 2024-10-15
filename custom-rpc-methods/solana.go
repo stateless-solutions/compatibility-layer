@@ -20,9 +20,9 @@ type contextResult struct {
 }
 
 var (
-	ErrInternalSlotResultNotFloat = &models.RPCErr{
+	ErrInternalSlotResultNotExpectedType = &models.RPCErr{
 		Code:          JSONRPCErrorInternal - 25,
-		Message:       "slot response is not a float",
+		Message:       "slot response is not of an expected type",
 		HTTPErrorCode: 500,
 	}
 )
@@ -106,20 +106,16 @@ func (s SolanaImpl) GetIndexOfIDHolder(gt solanaRPC.CommitmentType) (string, err
 }
 
 func (s SolanaImpl) ExtractGetterReturnFromResponse(res *models.RPCResJSON) (int, error) {
-	ctFloat, ok := res.Result.(float64)
-	if !ok {
-		return 0, ErrInternalSlotResultNotFloat
+	switch v := res.Result.(type) {
+	case float64:
+		floatStr := strconv.FormatFloat(v, 'f', -1, 64)
+		floatStrWithoutDot := strings.Replace(floatStr, ".", "", 1)
+		return strconv.Atoi(floatStrWithoutDot)
+	case int:
+		return v, nil
+	default:
+		return 0, ErrInternalSlotResultNotExpectedType
 	}
-
-	floatStr := strconv.FormatFloat(ctFloat, 'f', -1, 64)
-	floatStrWithoutDot := strings.Replace(floatStr, ".", "", 1)
-
-	ctInt, err := strconv.Atoi(floatStrWithoutDot)
-	if err != nil {
-		return 0, err
-	}
-
-	return ctInt, nil
 }
 
 func (s SolanaImpl) ExtractGetterReturnFromType(gt solanaRPC.CommitmentType) (int, error) {
