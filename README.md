@@ -36,8 +36,10 @@ Before you begin, ensure you have the following installed on your system:
     IDENTITY=identity
     HTTP_PORT=8080
     CONFIG_FILES=/path/to/your/chain.json
+    LOG_LEVEL='0'
     ```
 
+    `LOG_LEVEL` is an int representing the level of logging desired based on [slog's standard](https://cs.opensource.google/go/go/+/refs/tags/go1.23.2:src/log/slog/level.go;l=17) 
     Ensure that the `KEY_FILE` and `CONFIG_FILES` paths point to the actual locations of your files.
 
 ## Building the Docker Image
