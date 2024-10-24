@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -24,6 +25,7 @@ type RPCContext struct {
 	CustomMethodHolder *customrpcmethods.CustomMethodHolder
 	UseAttestation     bool
 	SigningKey         ssh.Signer
+	Logger             *slog.Logger
 }
 
 type reqHandler struct {
@@ -37,6 +39,38 @@ type reqHandler struct {
 	CustomMethodsMap map[string][]customrpcmethods.GetterTypesHolder
 	ChangedMethods   map[string]string
 	IDsHolder        map[string]string
+}
+
+func (rh *reqHandler) LogAttrs() []slog.Attr {
+	attrs := []slog.Attr{
+		slog.String("chainURL", rh.ChainURL),
+		slog.Bool("isSlice", rh.IsSlice),
+		slog.Bool("isGzip", rh.IsGzip),
+	}
+
+	if rh.HTTPResponse != nil {
+		attrs = append(attrs, slog.String("responseStatusCode", rh.HTTPResponse.Status))
+	}
+
+	for i, req := range rh.RPCReqs {
+		attrs = append(attrs, slog.Attr{
+			Key:   fmt.Sprintf("req-%d", i),
+			Value: slog.GroupValue(req.LogAttrs()...)})
+	}
+
+	for i, res := range rh.RPCRess {
+		attrs = append(attrs, slog.Attr{
+			Key:   fmt.Sprintf("res-%d", i),
+			Value: slog.GroupValue(res.LogAttrs()...)})
+	}
+
+	for i, res := range rh.RPCRessAttested {
+		attrs = append(attrs, slog.Attr{
+			Key:   fmt.Sprintf("res-attested-%d", i),
+			Value: slog.GroupValue(res.LogAttrs()...)})
+	}
+
+	return attrs
 }
 
 func (c *RPCContext) parseRPCReq(w http.ResponseWriter, r *http.Request, rh *reqHandler) error {
@@ -320,34 +354,57 @@ func (c *RPCContext) EnableAttestation(keyFile, keyFilePassword, identity string
 	c.UseAttestation = true
 }
 
+func (c *RPCContext) logDebug(msg string, err error, rh *reqHandler) {
+	var attrsToLog []any
+	attrsToLog = append(attrsToLog, slog.String("error", err.Error()))
+	for _, attr := range rh.LogAttrs() {
+		attrsToLog = append(attrsToLog, attr)
+	}
+	c.Logger.Debug(msg, attrsToLog...)
+}
+
 func (c *RPCContext) Handler(w http.ResponseWriter, r *http.Request) {
 	rh, err := c.newReqHandler(w, r)
 	if err != nil {
+		c.Logger.Error("Create request handler failed", slog.String("error", err.Error()))
+		c.Logger.Debug("Create request handler failed", slog.String("error", err.Error()))
 		return
 	}
 
 	err = c.parseRPCReq(w, r, rh)
 	if err != nil {
+		c.Logger.Error("Parse request failed", slog.String("error", err.Error()))
+		c.logDebug("Parse request failed", err, rh)
 		return
 	}
 
 	err = c.modifyReq(w, rh)
 	if err != nil {
+		c.Logger.Error("Modify request failed", slog.String("error", err.Error()))
+		c.logDebug("Modify request failed", err, rh)
 		return
 	}
 
 	err = c.doRPCCall(w, r, rh)
 	if err != nil {
+		c.Logger.Error("Do RPC call failed", slog.String("error", err.Error()))
+		c.logDebug("Do RPC call failed", err, rh)
 		return
 	}
 
 	err = c.modifyRes(w, rh)
 	if err != nil {
+		c.Logger.Error("Modify response failed", slog.String("error", err.Error()))
+		c.logDebug("Modify response failed", err, rh)
 		return
 	}
 
 	err = c.returnRes(w, rh)
 	if err != nil {
+		c.Logger.Error("Return response failed", slog.String("error", err.Error()))
+		c.logDebug("Return response failed", err, rh)
 		return
 	}
+
+	c.Logger.Info("Request succeeded")
 }

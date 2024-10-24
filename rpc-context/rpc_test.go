@@ -3,6 +3,7 @@ package rpccontext
 import (
 	"bytes"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -120,6 +121,7 @@ func TestAttestorHandler(t *testing.T) {
 			context := &RPCContext{
 				Identity:           identity,
 				CustomMethodHolder: ch,
+				Logger:             slog.Default(),
 			}
 
 			if tt.useAttestation {

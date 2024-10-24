@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -115,6 +116,7 @@ func TestIntegration(t *testing.T) {
 				Identity:           identity,
 				DefaultChainURL:    urlFlag,
 				CustomMethodHolder: ch,
+				Logger:             slog.Default(),
 			}
 
 			// Create a handler using AttestorHandler
