@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     env:
-      ECR_REPOSITORY: compatibility-layer
+      ECR_REPOSITORY: stateless/compatibility-layer
       ECS_SERVICE: compatibility-layer
       ECS_CLUSTER: StatelessCluster
       ECS_TASK_DEFINITION: .aws/task-definition.json
