@@ -53,6 +53,11 @@ func main() {
 	// Start the server on the specified port
 	http.HandleFunc("/", rpcContext.Handler)
 
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
+
 	go func() {
 		logger.Info(fmt.Sprintf("Starting server on :%s", rpcContext.HTTPPort))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
