@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - production
-      # TODO: Remove the following branch after testing
-      - deployment-workflow
 
 env:
   AWS_REGION: us-east-2
