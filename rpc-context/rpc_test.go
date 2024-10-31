@@ -116,7 +116,7 @@ func TestAttestorHandler(t *testing.T) {
 			// Mock response recorder
 			rec := httptest.NewRecorder()
 
-			ch := customrpcmethods.NewCustomMethodHolder("../supported-chains/ethereum.json")
+			ch := customrpcmethods.NewCustomMethodHolder(false, "../supported-chains/ethereum.json")
 
 			context := &RPCContext{
 				Identity:           identity,

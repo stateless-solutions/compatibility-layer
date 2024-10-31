@@ -24,6 +24,7 @@ var (
 	httpPort        = environment.GetString("HTTP_PORT", "8080")
 	configFiles     = environment.GetString("CONFIG_FILES", "supported-chains/ethereum.json")
 	logLevel        = slog.Level(environment.GetInt64("LOG_LEVEL", int64(slog.LevelInfo)))
+	gatewayMode     = environment.GetBool("GATEWAY_MODE", false)
 )
 
 func main() {
@@ -31,7 +32,7 @@ func main() {
 		Level: logLevel,
 	}))
 
-	ch := customrpcmethods.NewCustomMethodHolder(configFiles)
+	ch := customrpcmethods.NewCustomMethodHolder(gatewayMode, configFiles)
 
 	rpcContext := &rpccontext.RPCContext{
 		Identity:           identity,

@@ -37,10 +37,12 @@ Before you begin, ensure you have the following installed on your system:
     HTTP_PORT=8080
     CONFIG_FILES=/path/to/your/chain.json
     LOG_LEVEL='0'
+    GATEWAY_MODE=true
     ```
 
     `LOG_LEVEL` is an int representing the level of logging desired based on [slog's standard](https://cs.opensource.google/go/go/+/refs/tags/go1.23.2:src/log/slog/level.go;l=17) 
     Ensure that the `KEY_FILE` and `CONFIG_FILES` paths point to the actual locations of your files.
+    `GATEWAY_MODE` is to change regular rpc to methods to their custom counterpart when a request is made
 
 ## Building the Docker Image
 

@@ -50,7 +50,9 @@ type GetterTypesHolder struct {
 // functions in this interface are in the order they are called
 type CustomRpcMethodBuilder interface {
 	// PopulateConfig passes the config to the method builder memory
-	PopulateConfig(configs []MethodsConfig)
+	PopulateConfig(gatewayMode bool, configs []MethodsConfig)
+	// HandleGatewayMode changes the rpc methods from regular to custom in case gateway mode is on
+	HandleGatewayMode(rpcReqs []*models.RPCReq) ([]*models.RPCReq, error)
 	// GetCustomMethodsMap returns map of custom rpc methods to GetterType slice, slice needed in case of range
 	GetCustomMethodsMap(rpcReqs []*models.RPCReq) (map[string][]GetterTypesHolder, error)
 	// ChangeCustomMethods changes custom methods in rpc reqs slice to their original counterparts and returns map of the ID to original method
@@ -67,7 +69,7 @@ type CustomMethodHolder struct {
 	OriginalMethodToChainType map[string]ChainType
 }
 
-func NewCustomMethodHolder(configFiles string) *CustomMethodHolder {
+func NewCustomMethodHolder(gatewayMode bool, configFiles string) *CustomMethodHolder {
 	ch := &CustomMethodHolder{
 		ChainTypeToMethodBuilder:  make(map[ChainType]CustomRpcMethodBuilder, len(chainTypeToMethodBuilder)),
 		CustomMethodToChainType:   map[string]ChainType{},
@@ -103,7 +105,7 @@ func NewCustomMethodHolder(configFiles string) *CustomMethodHolder {
 
 	for chainType, configs := range configsMap {
 		methodBuilder := chainTypeToMethodBuilder[chainType]
-		methodBuilder.PopulateConfig(configs)
+		methodBuilder.PopulateConfig(gatewayMode, configs)
 		ch.ChainTypeToMethodBuilder[chainType] = methodBuilder
 	}
 
@@ -171,6 +173,18 @@ func (ch *CustomMethodHolder) getChainTypeFromOriginalMethods(originalMethods []
 	}
 
 	return chainType, nil
+}
+
+func (ch *CustomMethodHolder) HandleGatewayMode(rpcReqs []*models.RPCReq) ([]*models.RPCReq, error) {
+	chainType, err := ch.getChainTypeFromRPCReqOriginalMethods(rpcReqs)
+	if err != nil {
+		return nil, err
+	}
+	if chainType == "" {
+		return rpcReqs, nil
+	}
+
+	return ch.ChainTypeToMethodBuilder[chainType].HandleGatewayMode(rpcReqs)
 }
 
 func (ch *CustomMethodHolder) GetCustomMethodsMap(rpcReqs []*models.RPCReq) (map[string][]GetterTypesHolder, error) {
