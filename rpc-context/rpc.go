@@ -104,6 +104,12 @@ func (c *RPCContext) parseRPCReq(w http.ResponseWriter, r *http.Request, rh *req
 }
 
 func (c *RPCContext) modifyReq(w http.ResponseWriter, rh *reqHandler) error {
+	var err error
+	rh.RPCReqs, err = c.CustomMethodHolder.HandleGatewayMode(rh.RPCReqs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return err
+	}
 	customMethodsMap, err := c.CustomMethodHolder.GetCustomMethodsMap(rh.RPCReqs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

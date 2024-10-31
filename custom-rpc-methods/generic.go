@@ -53,6 +53,8 @@ type GenericConvImpl[T GetterTypes, R GetterReturns, S GetterStructs, SR GetterR
 // GenericConv is the generic struct for the converter of all chain types
 type GenericConv[T GetterTypes, R GetterReturns, S GetterStructs, SR GetterRangeStructs] struct {
 	impl                        GenericConvImpl[T, R, S, SR]
+	gatewayMode                 bool
+	regularToCustom             map[string]string
 	customToRegular             map[string]string
 	customMethodToPos           map[string][]int
 	customMethodToIsRange       map[string]bool
@@ -69,6 +71,7 @@ func NewGenericConv[T GetterTypes, R GetterReturns, S GetterStructs, SR GetterRa
 
 	return &GenericConv[T, R, S, SR]{
 		impl:                        impl,
+		regularToCustom:             map[string]string{},
 		customToRegular:             map[string]string{},
 		customMethodToPos:           map[string][]int{},
 		customMethodToIsRange:       map[string]bool{},
@@ -76,9 +79,11 @@ func NewGenericConv[T GetterTypes, R GetterReturns, S GetterStructs, SR GetterRa
 	}
 }
 
-func (g *GenericConv[T, R, S, SR]) PopulateConfig(configs []MethodsConfig) {
+func (g *GenericConv[T, R, S, SR]) PopulateConfig(gatewayMode bool, configs []MethodsConfig) {
+	g.gatewayMode = gatewayMode
 	for _, config := range configs {
 		for _, method := range config.Methods {
+			g.regularToCustom[method.OriginalMethod] = method.CustomMethod
 			g.customToRegular[method.CustomMethod] = method.OriginalMethod
 			if len(method.PositionsGetterParam) > 2 {
 				panic(fmt.Sprintf("positions getter param length for method %s is %d and the max allowed is 2", method.CustomMethod, len(method.PositionsGetterParam)))
@@ -100,6 +105,19 @@ func (g *GenericConv[T, R, S, SR]) PopulateConfig(configs []MethodsConfig) {
 			}
 		}
 	}
+}
+
+func (g *GenericConv[T, R, S, SR]) HandleGatewayMode(rpcReqs []*models.RPCReq) ([]*models.RPCReq, error) {
+	if g.gatewayMode {
+		for _, req := range rpcReqs {
+			cusMethod, ok := g.regularToCustom[req.Method]
+			if ok {
+				req.Method = cusMethod
+			}
+		}
+	}
+
+	return rpcReqs, nil
 }
 
 func (g *GenericConv[T, R, S, SR]) returnDefaultGetters(req *models.RPCReq) []T {

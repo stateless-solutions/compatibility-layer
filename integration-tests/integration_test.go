@@ -109,7 +109,7 @@ func TestIntegration(t *testing.T) {
 				panic(err)
 			}
 
-			ch := customrpcmethods.NewCustomMethodHolder(configFileTest)
+			ch := customrpcmethods.NewCustomMethodHolder(false, configFileTest)
 
 			context := &rpccontext.RPCContext{
 				SigningKey:         signer,

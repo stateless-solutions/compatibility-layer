@@ -676,6 +676,62 @@ func TestEVM(t *testing.T) {
 			contentsToRewrite: []string{"earliest", "pending"},
 			idsToRewrite:      []string{"22", "23"},
 		},
+		{
+			name: "Call latest tag in gateway mode",
+			req: []*models.RPCReq{{
+				Method: "eth_call",
+				ID:     json.RawMessage("21"),
+				Params: json.RawMessage(`["","latest"]`),
+			}},
+			expectedReq: &models.RPCReq{
+				Method: "eth_call",
+				ID:     json.RawMessage("21"),
+			},
+			expectedReqLength: 2,
+			res: []*models.RPCResJSON{{
+				ID:     json.RawMessage("21"),
+				Result: "aaa",
+			}, {ID: json.RawMessage("22"),
+				Result: map[string]interface{}{"number": "0x21"}}},
+			expectedRes: &models.RPCResJSON{
+				ID: json.RawMessage("21"),
+				Result: blockNumberResult{
+					Data:        "aaa",
+					BlockNumber: "0x21",
+				},
+			},
+			gatewayMode:       true,
+			contentsToRewrite: []string{"latest"},
+			idsToRewrite:      []string{"22"},
+		},
+		{
+			name: "Call and block number latest tag in gateway mode",
+			req: []*models.RPCReq{{
+				Method: "eth_callAndBlockNumber",
+				ID:     json.RawMessage("21"),
+				Params: json.RawMessage(`["","latest"]`),
+			}},
+			expectedReq: &models.RPCReq{
+				Method: "eth_call",
+				ID:     json.RawMessage("21"),
+			},
+			expectedReqLength: 2,
+			res: []*models.RPCResJSON{{
+				ID:     json.RawMessage("21"),
+				Result: "aaa",
+			}, {ID: json.RawMessage("22"),
+				Result: map[string]interface{}{"number": "0x21"}}},
+			expectedRes: &models.RPCResJSON{
+				ID: json.RawMessage("21"),
+				Result: blockNumberResult{
+					Data:        "aaa",
+					BlockNumber: "0x21",
+				},
+			},
+			gatewayMode:       true,
+			contentsToRewrite: []string{"latest"},
+			idsToRewrite:      []string{"22"},
+		},
 	}
 
 	runTests(t, "../supported-chains/ethereum.json", tests)

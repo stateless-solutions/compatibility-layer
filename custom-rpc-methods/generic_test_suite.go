@@ -11,6 +11,7 @@ type testCaseGenericConv struct {
 	req               []*models.RPCReq
 	expectedReq       *models.RPCReq
 	expectedReqLength int
+	gatewayMode       bool
 	res               []*models.RPCResJSON
 	idsToRewrite      []string // needed to be able to assest bc in the real code the id is random
 	contentsToRewrite []string
@@ -21,7 +22,13 @@ type testCaseGenericConv struct {
 func runTests(t *testing.T, configFile string, tests []testCaseGenericConv) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ch := NewCustomMethodHolder(configFile)
+			var err error
+			ch := NewCustomMethodHolder(tt.gatewayMode, configFile)
+
+			tt.req, err = ch.HandleGatewayMode(tt.req)
+			if err != nil {
+				t.Fatalf("Test case %s: Error not expected, got %v", tt.name, err)
+			}
 
 			context, err := ch.GetCustomMethodsMap(tt.req)
 			if err != nil {
