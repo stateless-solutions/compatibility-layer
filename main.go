@@ -51,7 +51,7 @@ func main() {
 	}
 
 	// Start the server on the specified port
-	http.HandleFunc("/", rpcContext.Handler)
+	http.HandleFunc("/rpc", rpcContext.Handler)
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
