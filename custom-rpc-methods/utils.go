@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"math/big"
 
-	"github.com/stateless-solutions/stateless-compatibility-layer/models"
+	"github.com/stateless-solutions/compatibility-layer/models"
 )
 
 const JSONRPCErrorInternal = -32000

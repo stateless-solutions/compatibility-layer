@@ -3,7 +3,7 @@ package customrpcmethods
 import (
 	"testing"
 
-	"github.com/stateless-solutions/stateless-compatibility-layer/models"
+	"github.com/stateless-solutions/compatibility-layer/models"
 )
 
 type testCaseGenericConv struct {

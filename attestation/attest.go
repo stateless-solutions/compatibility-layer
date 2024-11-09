@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/stateless-solutions/stateless-compatibility-layer/models"
+	"github.com/stateless-solutions/compatibility-layer/models"
 	"golang.org/x/crypto/ssh"
 )
 

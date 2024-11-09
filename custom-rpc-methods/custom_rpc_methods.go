@@ -9,7 +9,7 @@ import (
 
 	gethRPC "github.com/ethereum/go-ethereum/rpc"
 	solanaRPC "github.com/gagliardetto/solana-go/rpc"
-	"github.com/stateless-solutions/stateless-compatibility-layer/models"
+	"github.com/stateless-solutions/compatibility-layer/models"
 )
 
 type ChainType string

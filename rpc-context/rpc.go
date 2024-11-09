@@ -12,9 +12,9 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/stateless-solutions/stateless-compatibility-layer/attestation"
-	customrpcmethods "github.com/stateless-solutions/stateless-compatibility-layer/custom-rpc-methods"
-	"github.com/stateless-solutions/stateless-compatibility-layer/models"
+	"github.com/stateless-solutions/compatibility-layer/attestation"
+	customrpcmethods "github.com/stateless-solutions/compatibility-layer/custom-rpc-methods"
+	"github.com/stateless-solutions/compatibility-layer/models"
 	"golang.org/x/crypto/ssh"
 )
 

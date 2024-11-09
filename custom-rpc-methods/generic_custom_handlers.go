@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/stateless-solutions/stateless-compatibility-layer/models"
+	"github.com/stateless-solutions/compatibility-layer/models"
 )
 
 // CustomHandlerHolder is a generic of structs that hold the methods for custom handlers
