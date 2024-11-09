@@ -1,4 +1,4 @@
-module github.com/stateless-solutions/stateless-compatibility-layer
+module github.com/stateless-solutions/compatibility-layer
 
 go 1.22.4
 

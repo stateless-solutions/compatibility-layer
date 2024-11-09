@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	customrpcmethods "github.com/stateless-solutions/stateless-compatibility-layer/custom-rpc-methods"
+	customrpcmethods "github.com/stateless-solutions/compatibility-layer/custom-rpc-methods"
 )
 
 func TestAttestorHandler(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	gethRPC "github.com/ethereum/go-ethereum/rpc"
-	"github.com/stateless-solutions/stateless-compatibility-layer/models"
+	"github.com/stateless-solutions/compatibility-layer/models"
 )
 
 type blockNumberResult struct {

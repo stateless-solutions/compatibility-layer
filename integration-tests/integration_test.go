@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stateless-solutions/stateless-compatibility-layer/attestation"
-	customrpcmethods "github.com/stateless-solutions/stateless-compatibility-layer/custom-rpc-methods"
-	"github.com/stateless-solutions/stateless-compatibility-layer/models"
-	rpccontext "github.com/stateless-solutions/stateless-compatibility-layer/rpc-context"
+	"github.com/stateless-solutions/compatibility-layer/attestation"
+	customrpcmethods "github.com/stateless-solutions/compatibility-layer/custom-rpc-methods"
+	"github.com/stateless-solutions/compatibility-layer/models"
+	rpccontext "github.com/stateless-solutions/compatibility-layer/rpc-context"
 )
 
 var urlFlag string

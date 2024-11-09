@@ -10,9 +10,9 @@ import (
 	"syscall"
 	"time"
 
-	customrpcmethods "github.com/stateless-solutions/stateless-compatibility-layer/custom-rpc-methods"
-	"github.com/stateless-solutions/stateless-compatibility-layer/environment"
-	rpccontext "github.com/stateless-solutions/stateless-compatibility-layer/rpc-context"
+	customrpcmethods "github.com/stateless-solutions/compatibility-layer/custom-rpc-methods"
+	"github.com/stateless-solutions/compatibility-layer/environment"
+	rpccontext "github.com/stateless-solutions/compatibility-layer/rpc-context"
 )
 
 var (
