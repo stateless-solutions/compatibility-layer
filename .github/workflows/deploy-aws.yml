@@ -1,9 +1,12 @@
 name: Deploy Compatibility Layer to Amazon ECS
 
 on:
-  push:
-    branches:
-      - production
+  workflow_run:
+    workflows: ["Go Test on PR to Main"]
+    branches: [production]
+    types:
+      - completed
+  workflow_dispatch:
 
 env:
   AWS_REGION: us-east-2
