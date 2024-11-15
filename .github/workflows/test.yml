@@ -19,16 +19,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Restore Go cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
@@ -36,12 +26,3 @@ jobs:
 
       - name: Run tests
         run: go test ./...
-
-      - name: Save Go cache
-        uses: actions/cache/save@v4
-        if: always()
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
