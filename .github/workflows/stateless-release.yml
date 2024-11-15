@@ -1,11 +1,11 @@
 name: Publish Stateless artifacts
 on:
   workflow_dispatch: 
-  push:
-    branches-ignore:
-      - "*"
-    tags:
-      - 'v*.*.*'
+  # push:
+  #   branches-ignore:
+  #     - "*"
+  #   tags:
+  #     - 'v*.*.*'
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
