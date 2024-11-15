@@ -37,6 +37,7 @@ type Method struct {
 }
 
 type MethodsConfig struct {
+	ChainName string    `json:"chainName"`
 	ChainType ChainType `json:"chainType"`
 	Methods   []Method  `json:"methods"`
 }
@@ -61,6 +62,18 @@ type CustomRpcMethodBuilder interface {
 	AddGetterMethodsIfNeeded(rpcReqs []*models.RPCReq, customMethodsMap map[string][]GetterTypesHolder) ([]*models.RPCReq, map[string]string, error)
 	// ChangeCustomMethodsResponses returns responses originally input as rpc reqs based on the responses of previous funcs
 	ChangeCustomMethodsResponses(responses []*models.RPCResJSON, changedMethods, idsHolder map[string]string, customMethodsMap map[string][]GetterTypesHolder) ([]*models.RPCResJSON, error)
+}
+
+// ImplementationPublicData is the interface of functions of public data to be used from repos that import the compatibility layer
+type ImplementationPublicData interface {
+	GetChainType() ChainType
+	SupportsRange() bool
+}
+
+// ChainTypeToPublicData is a map to be able to fetch various data from chain type when compatibility layer is expoted
+var ChainTypeToPublicData map[ChainType]ImplementationPublicData = map[ChainType]ImplementationPublicData{
+	ChainTypeEVM:    EVMImpl{},
+	ChainTypeSolana: SolanaImpl{},
 }
 
 type CustomMethodHolder struct {

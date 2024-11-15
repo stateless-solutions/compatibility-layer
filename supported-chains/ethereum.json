@@ -1,4 +1,5 @@
 {
+  "chainName": "ethereum",
   "chainType": "evm",
   "methods": [
     {
