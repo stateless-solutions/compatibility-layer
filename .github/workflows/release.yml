@@ -1,11 +1,11 @@
 name: Tag & Go List
 
 on:
-  # workflow_run:
-  #   workflows: ["Go Test on PR to Main"]
-  #   branches: [main]
-  #   types:
-  #     - completed
+  workflow_run:
+    workflows: ["Go Test on PR to Main"]
+    branches: [main]
+    types:
+      - completed
   workflow_dispatch:
 
 jobs:
@@ -18,17 +18,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-
-      - name: Set up cache
-        uses: actions/cache@v2
+      - name: Set up Go
+        uses: actions/setup-go@v4
         with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+          go-version: 1.22
+
       - name: Tag
         uses: codfish/semantic-release-action@v2.0.0
         id: semantic
