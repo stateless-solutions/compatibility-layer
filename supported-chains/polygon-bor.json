@@ -1,5 +1,5 @@
 {
-  "chainName": "polygon-bor",
+  "chainNames": ["polygon-bor"],
   "chainType": "evm",
     "methods": [
       {

@@ -1,5 +1,5 @@
 {
-  "chainName": "blast",
+  "chainNames": ["blast"],
   "chainType": "evm",
     "methods": [
       {

@@ -1,5 +1,5 @@
 {
-    "chainName": "solana",
+    "chainNames": ["solana"],
     "chainType": "solana",
       "methods": [
         {
