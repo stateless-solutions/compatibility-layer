@@ -71,7 +71,7 @@ Before you begin, ensure you have the following installed on your system:
 
     ```json
     {
-        "chainName": "ethereum",
+        "chainNames": ["ethereum"],
         "chainType": "evm",
         "methods": [
             {
@@ -97,7 +97,7 @@ Before you begin, ensure you have the following installed on your system:
             - **`Solana`**: the solana go's standard [CommitmentType](https://github.com/gagliardetto/solana-go/blob/main/rpc/types.go#L431)
 
     - **Explanation of Fields**:
-        - **`chainName`**: Name of the chain of the config file, this field is just for trackability purposes it is not used in this repo
+        - **`chainNames`**: Name of the chains of the config file, this field is just for trackability purposes it is not used in this repo
         - **`chainType`**: Chain type of the chain of the config file, this field is a enum specified on `ChainType` in the `custom-rpc-methods/custom_rpc_methods.go` file
         - **`customMethod`**: The method name used to retrieve data along with the getter struct (block number in the case of EVM).
         - **`originalMethod`**: The original method name without the getter struct support.

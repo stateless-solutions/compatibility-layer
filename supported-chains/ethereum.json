@@ -1,5 +1,5 @@
 {
-  "chainName": "ethereum",
+  "chainNames": ["ethereum", "arbitrum", "optimism"],
   "chainType": "evm",
   "methods": [
     {

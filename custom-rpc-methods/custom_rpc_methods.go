@@ -37,9 +37,9 @@ type Method struct {
 }
 
 type MethodsConfig struct {
-	ChainName string    `json:"chainName"`
-	ChainType ChainType `json:"chainType"`
-	Methods   []Method  `json:"methods"`
+	ChainNames []string  `json:"chainNames"`
+	ChainType  ChainType `json:"chainType"`
+	Methods    []Method  `json:"methods"`
 }
 
 // this structure is needed bc you can't return directly a generic in a non generic func
